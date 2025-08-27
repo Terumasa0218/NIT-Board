@@ -71,25 +71,32 @@ const createUserDocument = async (firebaseUser: FirebaseUser, nickname: string, 
 }
 
 const fetchUserDocument = async (uid: string): Promise<User | null> => {
-  const userRef = doc(db, 'users', uid)
-  const userSnap = await getDoc(userRef)
-  
-  if (!userSnap.exists()) {
-    return null
-  }
+  try {
+    const userRef = doc(db, 'users', uid)
+    const userSnap = await getDoc(userRef)
+    
+    if (!userSnap.exists()) {
+      console.log('AuthStore: User document does not exist for uid:', uid)
+      return null
+    }
 
-  const data = userSnap.data()
-  return {
-    id: uid,
-    email: data.email,
-    nickname: data.nickname,
-    avatarUrl: data.avatarUrl,
-    suspendedUntil: data.suspendedUntil?.toDate(),
-    followers: data.followers || [],
-    following: data.following || [],
-    preferredLocale: data.preferredLocale || 'ja',
-    createdAt: data.createdAt?.toDate() || new Date(),
-    updatedAt: data.updatedAt?.toDate() || new Date(),
+    const data = userSnap.data()
+    return {
+      id: uid,
+      email: data.email,
+      nickname: data.nickname,
+      avatarUrl: data.avatarUrl,
+      suspendedUntil: data.suspendedUntil?.toDate(),
+      followers: data.followers || [],
+      following: data.following || [],
+      preferredLocale: data.preferredLocale || 'ja',
+      createdAt: data.createdAt?.toDate() || new Date(),
+      updatedAt: data.updatedAt?.toDate() || new Date(),
+    }
+  } catch (error) {
+    console.error('AuthStore: Error fetching user document for uid:', uid, error)
+    // Return null instead of throwing error to indicate document not found
+    return null
   }
 }
 
@@ -110,34 +117,19 @@ export const useAuthStore = create<AuthStore>()(
             throw new Error('EMAIL_NOT_VERIFIED')
           }
 
-          try {
-            const user = await fetchUserDocument(firebaseUser.uid)
-            if (user && (!user.suspendedUntil || user.suspendedUntil <= new Date())) {
-              console.log('AuthStore: User logged in successfully')
-              set({ user, loading: false, isGuest: false })
-            } else if (user && user.suspendedUntil && user.suspendedUntil > new Date()) {
+          console.log('AuthStore: Firebase authentication successful, fetching user document...')
+          const user = await fetchUserDocument(firebaseUser.uid)
+          
+          if (user) {
+            // User document exists
+            if (user.suspendedUntil && user.suspendedUntil > new Date()) {
               throw new Error('USER_SUSPENDED')
-            } else {
-              // User document not found - this is normal for new users
-              console.log('AuthStore: User document not found, redirecting to profile setup')
-              // Create a minimal user object for profile setup
-              const minimalUser: User = {
-                id: firebaseUser.uid,
-                email: firebaseUser.email!,
-                nickname: '',
-                avatarUrl: undefined,
-                suspendedUntil: undefined,
-                followers: [],
-                following: [],
-                preferredLocale: 'ja',
-                createdAt: new Date(),
-                updatedAt: new Date(),
-              }
-              set({ user: minimalUser, loading: false, isGuest: false })
             }
-          } catch (error) {
-            console.error('AuthStore: Error fetching user document:', error)
-            // If user document doesn't exist, create a minimal user object
+            console.log('AuthStore: User logged in successfully')
+            set({ user, loading: false, isGuest: false })
+          } else {
+            // User document not found - this is normal for new users
+            console.log('AuthStore: User document not found, creating minimal user for profile setup')
             const minimalUser: User = {
               id: firebaseUser.uid,
               email: firebaseUser.email!,
