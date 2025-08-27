@@ -1,0 +1,146 @@
+export interface User {
+  id: string
+  email: string
+  nickname: string
+  avatarUrl?: string
+  suspendedUntil?: Date
+  followers: string[]
+  following: string[]
+  preferredLocale: 'ja' | 'en'
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface Department {
+  id: string
+  nameJa: string
+  nameEn: string
+  programType: 'advanced' | 'creative' | 'core'
+}
+
+export interface Topic {
+  id: string
+  departmentId: string
+  nameJa: string
+  nameEn: string
+  slug: string
+  isActive: boolean
+}
+
+export interface Board {
+  id: string
+  topicId: string
+  title: string
+  createdAt: Date
+  createdBy: string
+  postCount: number
+  latestPostAt?: Date
+  yearCreated: number
+}
+
+export interface Post {
+  id: string
+  boardId: string
+  authorId: string
+  text: string
+  imageUrls: string[]
+  createdAt: Date
+  likeCount: number
+}
+
+export interface Like {
+  postId: string
+  userId: string
+  createdAt: Date
+}
+
+export interface Follow {
+  followerId: string
+  followeeId: string
+  createdAt: Date
+}
+
+export interface Chat {
+  id: string
+  participantIds: [string, string]
+  latestMessageAt?: Date
+  createdAt: Date
+}
+
+export interface Message {
+  id: string
+  chatId: string
+  authorId: string
+  text: string
+  imageUrls: string[]
+  createdAt: Date
+  reportedBy: string[]
+}
+
+export interface Report {
+  id: string
+  targetType: 'post' | 'message' | 'user'
+  targetId: string
+  reporterId: string
+  reason: string
+  createdAt: Date
+  status: 'pending' | 'resolved' | 'dismissed'
+}
+
+export interface Event {
+  id: string
+  title: string
+  body: string
+  imageUrls: string[]
+  createdAt: Date
+  createdBy: string
+}
+
+export interface Feedback {
+  id: string
+  authorId: string
+  body: string
+  createdAt: Date
+  visibleTo: 'admin'
+}
+
+export interface Notification {
+  id: string
+  userId: string
+  type: 'new_post' | 'new_follower' | 'new_like' | 'new_message'
+  refIds: Record<string, string>
+  isRead: boolean
+  createdAt: Date
+}
+
+export interface Archive {
+  id: string
+  boardId: string
+  folderName: string
+  keywords: string[]
+  year: number
+  imageRefs: string[]
+  createdAt: Date
+}
+
+export interface UserPreferences {
+  starredBoards: string[]
+  notificationBoards: string[]
+  theme: 'light' | 'dark' | 'system'
+}
+
+export type Locale = 'ja' | 'en'
+
+export interface AuthState {
+  user: User | null
+  loading: boolean
+  isGuest: boolean
+}
+
+export interface AppState {
+  currentDepartment: Department | null
+  currentTopic: Topic | null
+  currentBoard: Board | null
+  locale: Locale
+  theme: 'light' | 'dark' | 'system'
+}
