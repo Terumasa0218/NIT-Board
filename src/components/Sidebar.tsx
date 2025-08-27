@@ -1,11 +1,11 @@
 import { NavLink } from 'react-router-dom'
 import { useAuthStore } from '@/stores/auth'
 import { useI18n } from '@/utils/i18n'
-import { 
-  Home, 
-  MessageSquare, 
-  Calendar, 
-  Settings, 
+import {
+  Home,
+  MessageSquare,
+  Calendar,
+  Settings,
   User,
   Hash,
   Layers
@@ -19,17 +19,17 @@ export default function Sidebar() {
     {
       to: '/',
       icon: Home,
-      label: t('common.home'),
+      label: t('nav.home'),
     },
     {
       to: '/departments',
       icon: MessageSquare,
-      label: t('common.boards'),
+      label: t('nav.boards'),
     },
     {
       to: '/topics',
       icon: Hash,
-      label: t('common.topics'),
+      label: t('topics'),
     },
     {
       to: '/boards',
@@ -39,13 +39,13 @@ export default function Sidebar() {
     {
       to: '/events',
       icon: Calendar,
-      label: t('common.events'),
+      label: t('nav.events'),
     },
     ...(user && !isGuest ? [
       {
         to: '/messages',
         icon: MessageSquare,
-        label: t('common.messages'),
+        label: t('nav.messages'),
       },
     ] : []),
   ]
@@ -55,13 +55,13 @@ export default function Sidebar() {
       {
         to: '/profile',
         icon: User,
-        label: t('common.profile'),
+        label: 'プロフィール',
       },
     ] : []),
     {
       to: '/settings',
       icon: Settings,
-      label: t('common.settings'),
+      label: '設定',
     },
   ]
 
@@ -70,7 +70,7 @@ export default function Sidebar() {
       {/* Logo/Brand */}
       <div className="p-6 border-b border-border">
         <h1 className="text-xl font-semibold text-foreground">
-          NITech Board
+          {t('appTitle')}
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
           名古屋工業大学掲示板

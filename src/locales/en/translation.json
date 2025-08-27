@@ -1,0 +1,46 @@
+{
+  "appTitle": "NITech Board",
+  "nav": { 
+    "home": "Home", 
+    "boards": "Boards", 
+    "events": "Events", 
+    "messages": "Messages" 
+  },
+  "topics": "Topics",
+  "home": { 
+    "subtitle": "An internal knowledge-sharing platform" 
+  },
+  "boards": {
+    "title": "Boards",
+    "new": "New Board",
+    "searchPlaceholder": "Search boards…",
+    "noBoards": "No boards yet",
+    "sort": { 
+      "latest": "Latest", 
+      "popular": "Popular", 
+      "unanswered": "Unanswered" 
+    },
+    "badges": { 
+      "solved": "Solved", 
+      "unanswered": "Unanswered" 
+    }
+  },
+  "topic": { 
+    "filtered": "Topic: {{name}}" 
+  },
+  "form": { 
+    "title": "Title", 
+    "desc": "Description", 
+    "topic": "Topic", 
+    "create": "Create" 
+  },
+  "empty": { 
+    "common": "No items yet", 
+    "posts": "No posts yet" 
+  },
+  "follow": { 
+    "follow": "Follow", 
+    "unfollow": "Unfollow", 
+    "message": "Message" 
+  }
+}
