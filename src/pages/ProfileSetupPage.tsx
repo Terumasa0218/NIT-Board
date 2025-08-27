@@ -44,23 +44,44 @@ export default function ProfileSetupPage() {
 
     setIsLoading(true)
     try {
+      console.log('ProfileSetupPage: Starting profile setup for user:', user.id)
+      
       // Check if user document exists in Firestore
       const userDoc = await fetchUserDocument(user.id)
+      console.log('ProfileSetupPage: User document exists:', !!userDoc)
       
       if (!userDoc) {
         // New user - create user document
+        console.log('ProfileSetupPage: Creating new user profile')
         await setupProfile(nickname.trim())
         toast.success('プロフィールを作成しました')
       } else {
         // Existing user - update profile
+        console.log('ProfileSetupPage: Updating existing user profile')
         await updateProfile({ nickname: nickname.trim() })
         toast.success('プロフィールを更新しました')
       }
       
+      console.log('ProfileSetupPage: Profile setup completed successfully')
       navigate('/')
-    } catch (error) {
-      console.error('Profile setup error:', error)
-      toast.error('プロフィールの保存に失敗しました')
+    } catch (error: any) {
+      console.error('ProfileSetupPage: Profile setup error:', error)
+      
+      let errorMessage = 'プロフィールの保存に失敗しました'
+      
+      if (error.code === 'permission-denied') {
+        errorMessage = '権限がありません。ログインし直してください'
+      } else if (error.code === 'unavailable') {
+        errorMessage = 'サーバーに接続できません。インターネット接続を確認してください'
+      } else if (error.code === 'deadline-exceeded') {
+        errorMessage = 'リクエストがタイムアウトしました。再試行してください'
+      } else if (error.message === 'No Firebase user') {
+        errorMessage = '認証情報が見つかりません。ログインし直してください'
+      } else if (error.message === 'No user logged in') {
+        errorMessage = 'ログイン情報が見つかりません。ログインし直してください'
+      }
+      
+      toast.error(errorMessage)
     } finally {
       setIsLoading(false)
     }

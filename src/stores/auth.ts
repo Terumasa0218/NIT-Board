@@ -182,25 +182,42 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       setupProfile: async (nickname: string, avatarUrl?: string) => {
+        console.log('AuthStore: Setting up profile for user:', auth.currentUser?.uid)
         const firebaseUser = auth.currentUser
         if (!firebaseUser) throw new Error('No Firebase user')
 
-        const user = await createUserDocument(firebaseUser, nickname, avatarUrl)
-        set({ user, loading: false, isGuest: false })
+        try {
+          const user = await createUserDocument(firebaseUser, nickname, avatarUrl)
+          console.log('AuthStore: Profile setup successful:', user)
+          set({ user, loading: false, isGuest: false })
+        } catch (error) {
+          console.error('AuthStore: Profile setup failed:', error)
+          throw error
+        }
       },
 
       updateProfile: async (updates: Partial<User>) => {
+        console.log('AuthStore: Updating profile for user:', auth.currentUser?.uid, 'updates:', updates)
         const { user } = get()
         if (!user) throw new Error('No user logged in')
 
-        const userRef = doc(db, 'users', user.id)
-        await updateDoc(userRef, {
-          ...updates,
-          updatedAt: serverTimestamp(),
-        })
+        try {
+          const userRef = doc(db, 'users', user.id)
+          const updateData = {
+            ...updates,
+            updatedAt: serverTimestamp(),
+          }
+          
+          console.log('AuthStore: Updating Firestore document with:', updateData)
+          await updateDoc(userRef, updateData)
 
-        const updatedUser = { ...user, ...updates, updatedAt: new Date() }
-        set({ user: updatedUser })
+          const updatedUser = { ...user, ...updates, updatedAt: new Date() }
+          console.log('AuthStore: Profile update successful:', updatedUser)
+          set({ user: updatedUser })
+        } catch (error) {
+          console.error('AuthStore: Profile update failed:', error)
+          throw error
+        }
       },
 
       setGuestMode: (isGuest: boolean) => {
