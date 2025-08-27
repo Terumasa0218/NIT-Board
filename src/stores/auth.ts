@@ -79,7 +79,7 @@ export const useAuthStore = create<AuthStore>()(
   persist(
     (set, get) => ({
       user: null,
-      loading: true,
+      loading: false, // Start with loading false
       isGuest: false,
 
       login: async (email: string, password: string) => {
@@ -177,13 +177,31 @@ export const useAuthStore = create<AuthStore>()(
       initializeAuth: () => {
         console.log('AuthStore: Starting auth initialization...')
         
+        // Check if already initialized
+        const currentState = get()
+        if (!currentState.loading && currentState.user === null) {
+          console.log('AuthStore: Already initialized, skipping...')
+          return () => {} // Return empty cleanup function
+        }
+        
+        // Set loading to true only when we start initializing
+        set({ loading: true })
+        
         // Add a timeout to prevent infinite loading
         const timeoutId = setTimeout(() => {
           console.log('AuthStore: Auth initialization timeout, proceeding without auth')
           set({ user: null, loading: false, isGuest: false })
-        }, 5000) // 5 second timeout
+        }, 3000) // 3 second timeout
+
+        let isInitialized = false
 
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+          if (isInitialized) {
+            console.log('AuthStore: Auth state change after initialization, ignoring...')
+            return
+          }
+          
+          isInitialized = true
           clearTimeout(timeoutId)
           console.log('AuthStore: Auth state changed:', !!firebaseUser)
           

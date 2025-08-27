@@ -25,17 +25,19 @@ function App() {
   const { user, loading, initializeAuth } = useAuthStore()
   const { changeLanguage } = useI18n()
 
+  // Initialize auth only once on mount
   useEffect(() => {
     console.log('App: Initializing auth...')
     const unsubscribe = initializeAuth()
-    
-    // Set user's preferred locale if logged in
+    return unsubscribe
+  }, []) // Empty dependency array
+
+  // Handle language change when user changes
+  useEffect(() => {
     if (user?.preferredLocale) {
       changeLanguage(user.preferredLocale)
     }
-    
-    return unsubscribe
-  }, [initializeAuth, user?.preferredLocale, changeLanguage])
+  }, [user?.preferredLocale, changeLanguage])
 
   useEffect(() => {
     console.log('App: Auth state changed:', { user: !!user, loading, isGuest: false })
