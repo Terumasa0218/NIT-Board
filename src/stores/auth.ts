@@ -92,17 +92,50 @@ export const useAuthStore = create<AuthStore>()(
             throw new Error('EMAIL_NOT_VERIFIED')
           }
 
-          const user = await fetchUserDocument(firebaseUser.uid)
-          if (!user) {
-            throw new Error('USER_DOCUMENT_NOT_FOUND')
+          try {
+            const user = await fetchUserDocument(firebaseUser.uid)
+            if (user && (!user.suspendedUntil || user.suspendedUntil <= new Date())) {
+              console.log('AuthStore: User logged in successfully')
+              set({ user, loading: false, isGuest: false })
+            } else if (user && user.suspendedUntil && user.suspendedUntil > new Date()) {
+              throw new Error('USER_SUSPENDED')
+            } else {
+              // User document not found - this is normal for new users
+              console.log('AuthStore: User document not found, redirecting to profile setup')
+              // Create a minimal user object for profile setup
+              const minimalUser: User = {
+                id: firebaseUser.uid,
+                email: firebaseUser.email!,
+                nickname: '',
+                avatarUrl: undefined,
+                suspendedUntil: undefined,
+                followers: [],
+                following: [],
+                preferredLocale: 'ja',
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              }
+              set({ user: minimalUser, loading: false, isGuest: false })
+            }
+          } catch (error) {
+            console.error('AuthStore: Error fetching user document:', error)
+            // If user document doesn't exist, create a minimal user object
+            const minimalUser: User = {
+              id: firebaseUser.uid,
+              email: firebaseUser.email!,
+              nickname: '',
+              avatarUrl: undefined,
+              suspendedUntil: undefined,
+              followers: [],
+              following: [],
+              preferredLocale: 'ja',
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            }
+            set({ user: minimalUser, loading: false, isGuest: false })
           }
-
-          if (user.suspendedUntil && user.suspendedUntil > new Date()) {
-            throw new Error('USER_SUSPENDED')
-          }
-
-          set({ user, loading: false, isGuest: false })
         } catch (error) {
+          console.error('AuthStore: Login error:', error)
           set({ loading: false })
           throw error
         }

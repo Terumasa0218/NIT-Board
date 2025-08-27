@@ -25,28 +25,41 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
+    if (!email.trim() || !password.trim()) {
+      toast.error('メールアドレスとパスワードを入力してください')
+      return
+    }
+
     if (!validateEmail(email)) {
-      toast.error(t('auth.onlyNitechEmail'))
+      toast.error('名古屋工業大学のメールアドレス（@ict.nitech.ac.jp）を使用してください')
       return
     }
 
     setIsLoading(true)
     try {
-      await login(email, password)
-      toast.success(t('auth.welcomeBack'))
-      navigate(from, { replace: true })
+      await login(email.trim(), password)
+      toast.success('ログインしました')
+      navigate('/')
     } catch (error: any) {
       console.error('Login error:', error)
       
-      let errorMessage = t('auth.loginFailed')
-      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-        errorMessage = t('auth.invalidCredentials')
+      let errorMessage = 'ログインに失敗しました'
+      
+      if (error.code === 'auth/user-not-found') {
+        errorMessage = 'ユーザーが見つかりません。登録してください。'
+      } else if (error.code === 'auth/wrong-password') {
+        errorMessage = 'パスワードが正しくありません'
       } else if (error.code === 'auth/too-many-requests') {
-        errorMessage = t('auth.tooManyRequests')
+        errorMessage = 'ログイン試行回数が多すぎます。しばらく待ってから再試行してください'
+      } else if (error.code === 'auth/user-disabled') {
+        errorMessage = 'アカウントが無効化されています'
       } else if (error.message === 'EMAIL_NOT_VERIFIED') {
-        errorMessage = t('auth.emailNotVerified')
+        errorMessage = 'メールアドレスの確認が必要です。確認メールをチェックしてください'
       } else if (error.message === 'USER_SUSPENDED') {
         errorMessage = 'アカウントが一時停止されています'
+      } else if (error.message === 'USER_DOCUMENT_NOT_FOUND') {
+        // This should not happen anymore with our new logic
+        errorMessage = 'ユーザー情報の取得に失敗しました。再試行してください'
       }
       
       toast.error(errorMessage)

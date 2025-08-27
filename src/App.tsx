@@ -1,5 +1,5 @@
 import { useEffect, Suspense, lazy } from 'react'
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from '@/stores/auth'
 import { useI18n } from '@/utils/i18n'
 import Layout from '@/components/Layout'
@@ -18,6 +18,7 @@ const CreateBoardPage = lazy(() => import('@/pages/CreateBoardPage'))
 const EventsPage = lazy(() => import('@/pages/EventsPage'))
 const MessagesPage = lazy(() => import('@/pages/MessagesPage'))
 const ProfilePage = lazy(() => import('@/pages/ProfilePage'))
+const ProfileSetupPage = lazy(() => import('@/pages/ProfileSetupPage'))
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 
@@ -51,44 +52,50 @@ function App() {
 
   console.log('App: Rendering main app...')
 
+  // Check if user needs to complete profile setup
+  const needsProfileSetup = user && !user.nickname
+
   return (
     <Suspense fallback={<div>Loading routes...</div>}>
       <Routes>
         {/* Public routes */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/profile-setup" element={<ProfileSetupPage />} />
         
         {/* Protected routes */}
         <Route path="/" element={<Layout />}>
-          <Route index element={<HomePage />} />
+          <Route index element={
+            needsProfileSetup ? <Navigate to="/profile-setup" replace /> : <HomePage />
+          } />
           <Route path="departments" element={<DepartmentsPage />} />
           <Route path="topics" element={<TopicsPage />} />
           <Route path="boards" element={<BoardsPage />} />
           <Route path="boards/:boardId" element={<BoardPage />} />
           <Route path="boards/create" element={
             <AuthGuard>
-              <CreateBoardPage />
+              {needsProfileSetup ? <Navigate to="/profile-setup" replace /> : <CreateBoardPage />}
             </AuthGuard>
           } />
           <Route path="create-board" element={
             <AuthGuard>
-              <CreateBoardPage />
+              {needsProfileSetup ? <Navigate to="/profile-setup" replace /> : <CreateBoardPage />}
             </AuthGuard>
           } />
           <Route path="events" element={<EventsPage />} />
           <Route path="messages" element={
             <AuthGuard>
-              <MessagesPage />
+              {needsProfileSetup ? <Navigate to="/profile-setup" replace /> : <MessagesPage />}
             </AuthGuard>
           } />
           <Route path="profile" element={
             <AuthGuard>
-              <ProfilePage />
+              {needsProfileSetup ? <Navigate to="/profile-setup" replace /> : <ProfilePage />}
             </AuthGuard>
           } />
           <Route path="settings" element={
             <AuthGuard>
-              <SettingsPage />
+              {needsProfileSetup ? <Navigate to="/profile-setup" replace /> : <SettingsPage />}
             </AuthGuard>
           } />
         </Route>
