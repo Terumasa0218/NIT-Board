@@ -45,7 +45,6 @@ const createUserDocument = async (firebaseUser: FirebaseUser, nickname: string, 
   const docData: any = {
     email: userData.email,
     nickname: userData.nickname,
-    suspendedUntil: userData.suspendedUntil,
     followers: userData.followers,
     following: userData.following,
     preferredLocale: userData.preferredLocale,
@@ -53,9 +52,14 @@ const createUserDocument = async (firebaseUser: FirebaseUser, nickname: string, 
     updatedAt: serverTimestamp(),
   }
   
-  // Only add avatarUrl if it's not undefined
-  if (avatarUrl !== undefined) {
-    docData.avatarUrl = avatarUrl
+  // Only add avatarUrl if it's defined
+  if (userData.avatarUrl !== undefined) {
+    docData.avatarUrl = userData.avatarUrl
+  }
+
+  // Only add suspendedUntil if it's defined (i.e., not undefined)
+  if (userData.suspendedUntil !== undefined) {
+    docData.suspendedUntil = userData.suspendedUntil
   }
   
   await setDoc(userRef, docData)
