@@ -26,6 +26,7 @@ function App() {
   const { changeLanguage } = useI18n()
 
   useEffect(() => {
+    console.log('App: Initializing auth...')
     const unsubscribe = initializeAuth()
     
     // Set user's preferred locale if logged in
@@ -36,12 +37,20 @@ function App() {
     return unsubscribe
   }, [initializeAuth, user?.preferredLocale, changeLanguage])
 
+  useEffect(() => {
+    console.log('App: Auth state changed:', { user: !!user, loading, isGuest: false })
+  }, [user, loading])
+
+  // Show loading screen only for a short time, then proceed
   if (loading) {
+    console.log('App: Showing loading screen...')
     return <LoadingScreen />
   }
 
+  console.log('App: Rendering main app...')
+
   return (
-    <Suspense fallback={<LoadingScreen />}>
+    <Suspense fallback={<div>Loading routes...</div>}>
       <Routes>
         {/* Public routes */}
         <Route path="/login" element={<LoginPage />} />

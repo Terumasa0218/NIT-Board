@@ -175,9 +175,21 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       initializeAuth: () => {
+        console.log('AuthStore: Starting auth initialization...')
+        
+        // Add a timeout to prevent infinite loading
+        const timeoutId = setTimeout(() => {
+          console.log('AuthStore: Auth initialization timeout, proceeding without auth')
+          set({ user: null, loading: false, isGuest: false })
+        }, 5000) // 5 second timeout
+
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+          clearTimeout(timeoutId)
+          console.log('AuthStore: Auth state changed:', !!firebaseUser)
+          
           if (firebaseUser) {
             if (!firebaseUser.emailVerified) {
+              console.log('AuthStore: User email not verified')
               set({ loading: false, user: null, isGuest: false })
               return
             }
@@ -185,15 +197,18 @@ export const useAuthStore = create<AuthStore>()(
             try {
               const user = await fetchUserDocument(firebaseUser.uid)
               if (user && (!user.suspendedUntil || user.suspendedUntil <= new Date())) {
+                console.log('AuthStore: User authenticated successfully')
                 set({ user, loading: false, isGuest: false })
               } else {
+                console.log('AuthStore: User suspended or not found')
                 set({ user: null, loading: false, isGuest: false })
               }
             } catch (error) {
-              console.error('Error fetching user document:', error)
+              console.error('AuthStore: Error fetching user document:', error)
               set({ user: null, loading: false, isGuest: false })
             }
           } else {
+            console.log('AuthStore: No user authenticated')
             set({ user: null, loading: false, isGuest: false })
           }
         })

@@ -1,7 +1,6 @@
 import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
 import LanguageDetector from 'i18next-browser-languagedetector'
-import Backend from 'i18next-http-backend'
 
 // Import locale files
 import commonJa from '../locales/ja/common.json'
@@ -26,7 +25,6 @@ const resources = {
 }
 
 i18n
-  .use(Backend)
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
@@ -48,7 +46,7 @@ i18n
     ns: ['common', 'auth', 'boards'],
     
     react: {
-      useSuspense: false,
+      useSuspense: false, // do not block the UI
     },
   })
 
