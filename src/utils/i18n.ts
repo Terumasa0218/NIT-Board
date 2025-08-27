@@ -14,7 +14,7 @@ export const useI18n = () => {
   
   const changeLanguage = useCallback((locale: Locale) => {
     i18n.changeLanguage(locale)
-    localStorage.setItem('nitech-board-locale', locale)
+    localStorage.setItem('lang', locale)
     document.documentElement.lang = locale
   }, [i18n])
   

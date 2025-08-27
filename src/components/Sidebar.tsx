@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom'
+import { useMemo } from 'react'
 import { useAuthStore } from '@/stores/auth'
 import { useI18n } from '@/utils/i18n'
 import {
@@ -15,7 +16,7 @@ export default function Sidebar() {
   const { user, isGuest } = useAuthStore()
   const { t } = useI18n()
 
-  const navItems = [
+  const navItems = useMemo(() => [
     {
       to: '/',
       icon: Home,
@@ -48,9 +49,9 @@ export default function Sidebar() {
         label: t('nav.messages'),
       },
     ] : []),
-  ]
+  ], [t, user, isGuest])
 
-  const bottomItems = [
+  const bottomItems = useMemo(() => [
     ...(user && !isGuest ? [
       {
         to: '/profile',
@@ -63,7 +64,7 @@ export default function Sidebar() {
       icon: Settings,
       label: '設定',
     },
-  ]
+  ], [user, isGuest])
 
   return (
     <div className="w-64 bg-card border-r border-border flex flex-col">
