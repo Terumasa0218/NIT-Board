@@ -229,8 +229,8 @@ export const useAuthStore = create<AuthStore>()(
         
         // Check if already initialized
         const currentState = get()
-        if (!currentState.loading && currentState.user === null) {
-          console.log('AuthStore: Already initialized, skipping...')
+        if (currentState.user !== null || currentState.loading) {
+          console.log('AuthStore: Already initialized or loading, skipping...')
           return () => {} // Return empty cleanup function
         }
         

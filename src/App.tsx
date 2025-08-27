@@ -35,7 +35,7 @@ function App() {
 
   // Handle language change when user changes
   useEffect(() => {
-    if (user?.preferredLocale) {
+    if (user?.preferredLocale && user.preferredLocale !== 'ja') {
       changeLanguage(user.preferredLocale)
     }
   }, [user?.preferredLocale, changeLanguage])

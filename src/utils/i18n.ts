@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { useCallback } from 'react'
 import { format, formatDistanceToNow } from 'date-fns'
 import { ja, enUS } from 'date-fns/locale'
 import type { Locale } from '@/types'
@@ -11,11 +12,11 @@ const dateLocales = {
 export const useI18n = () => {
   const { t, i18n } = useTranslation()
   
-  const changeLanguage = (locale: Locale) => {
+  const changeLanguage = useCallback((locale: Locale) => {
     i18n.changeLanguage(locale)
     localStorage.setItem('nitech-board-locale', locale)
     document.documentElement.lang = locale
-  }
+  }, [i18n])
   
   const currentLocale = i18n.language as Locale
   
