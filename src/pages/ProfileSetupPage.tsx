@@ -1,19 +1,31 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/stores/auth'
-import { useI18n } from '@/utils/i18n'
 import { User, Save } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { doc, getDoc } from 'firebase/firestore'
+import { db } from '@/firebase'
+
+// Helper function to check if user document exists
+const fetchUserDocument = async (uid: string) => {
+  const userRef = doc(db, 'users', uid)
+  const userSnap = await getDoc(userRef)
+  return userSnap.exists() ? userSnap.data() : null
+}
 
 export default function ProfileSetupPage() {
   const [nickname, setNickname] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const { user, updateProfile } = useAuthStore()
-  const { t } = useI18n()
+  const { user, updateProfile, setupProfile } = useAuthStore()
   const navigate = useNavigate()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!user) {
+      toast.error('ユーザー情報が見つかりません')
+      return
+    }
     
     if (!nickname.trim()) {
       toast.error('ニックネームを入力してください')
@@ -32,12 +44,23 @@ export default function ProfileSetupPage() {
 
     setIsLoading(true)
     try {
-      await updateProfile({ nickname: nickname.trim() })
-      toast.success('プロフィールを更新しました')
+      // Check if user document exists in Firestore
+      const userDoc = await fetchUserDocument(user.id)
+      
+      if (!userDoc) {
+        // New user - create user document
+        await setupProfile(nickname.trim())
+        toast.success('プロフィールを作成しました')
+      } else {
+        // Existing user - update profile
+        await updateProfile({ nickname: nickname.trim() })
+        toast.success('プロフィールを更新しました')
+      }
+      
       navigate('/')
     } catch (error) {
       console.error('Profile setup error:', error)
-      toast.error('プロフィールの更新に失敗しました')
+      toast.error('プロフィールの保存に失敗しました')
     } finally {
       setIsLoading(false)
     }
