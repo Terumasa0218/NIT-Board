@@ -40,11 +40,25 @@ const createUserDocument = async (firebaseUser: FirebaseUser, nickname: string, 
   }
 
   const userRef = doc(db, 'users', firebaseUser.uid)
-  await setDoc(userRef, {
-    ...userData,
+  
+  // Remove undefined values before sending to Firestore
+  const docData: any = {
+    email: userData.email,
+    nickname: userData.nickname,
+    suspendedUntil: userData.suspendedUntil,
+    followers: userData.followers,
+    following: userData.following,
+    preferredLocale: userData.preferredLocale,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
-  })
+  }
+  
+  // Only add avatarUrl if it's not undefined
+  if (avatarUrl !== undefined) {
+    docData.avatarUrl = avatarUrl
+  }
+  
+  await setDoc(userRef, docData)
 
   return {
     id: firebaseUser.uid,

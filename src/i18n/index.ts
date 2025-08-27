@@ -30,7 +30,7 @@ i18n
   .init({
     resources,
     fallbackLng: 'ja',
-    debug: process.env.NODE_ENV === 'development',
+    debug: false, // 開発環境でもデバッグを無効化
     
     interpolation: {
       escapeValue: false, // React already escapes values
@@ -48,6 +48,10 @@ i18n
     react: {
       useSuspense: false, // do not block the UI
     },
+    
+    // 翻訳キーが見つからない場合の警告を無効化
+    saveMissing: false,
+    missingKeyHandler: false,
   })
 
 export default i18n
