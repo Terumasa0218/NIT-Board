@@ -1,14 +1,22 @@
+import { useEffect } from 'react'
 import { Outlet } from 'react-router-dom'
+import { useAppStore } from '@/stores/appStore'
 import Sidebar from './Sidebar'
 import Header from './Header'
 
 export default function Layout() {
+  const { selectedUniversityId } = useAppStore()
+
+  useEffect(() => {
+    console.log('Current university:', selectedUniversityId)
+  }, [selectedUniversityId])
+
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex min-h-screen bg-background pb-4 sm:pb-6">
       <Sidebar />
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-h-screen">
         <Header />
-        <main className="flex-1 overflow-auto p-6">
+        <main className="flex-1 overflow-auto p-6 pb-10">
           <Outlet />
         </main>
       </div>

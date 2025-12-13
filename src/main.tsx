@@ -3,23 +3,14 @@ import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import App from './App.tsx'
-import i18n from './i18n'
+import I18nGate from './components/I18nGate'
+import './i18n'
 import './index.css'
 
-// Initialize i18n and render app
-const initializeApp = async () => {
-  try {
-    console.log('Initializing i18n...')
-    await i18n.init()
-    console.log('i18n initialized successfully')
-  } catch (error) {
-    console.error('Failed to initialize i18n:', error)
-  }
-
-  // Render app regardless of i18n initialization result
-  ReactDOM.createRoot(document.getElementById('root')!).render(
-    <React.StrictMode>
-      <BrowserRouter>
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <BrowserRouter>
+      <I18nGate>
         <App />
         <Toaster
           position="top-right"
@@ -32,10 +23,7 @@ const initializeApp = async () => {
             },
           }}
         />
-      </BrowserRouter>
-    </React.StrictMode>,
-  )
-}
-
-// Start the app
-initializeApp()
+      </I18nGate>
+    </BrowserRouter>
+  </React.StrictMode>,
+)

@@ -7,11 +7,10 @@ interface AuthGuardProps {
 }
 
 export default function AuthGuard({ children }: AuthGuardProps) {
-  const { user, isGuest } = useAuthStore()
+  const { user } = useAuthStore()
   const location = useLocation()
 
-  if (!user && !isGuest) {
-    // Redirect to login page with return URL
+  if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />
   }
 

@@ -1,61 +1,71 @@
 import type { Department, Topic } from '@/types'
+import { DEFAULT_UNIVERSITY_ID } from './university'
 
 export const DEPARTMENTS: Department[] = [
   // 高度工学教育課程
   {
     id: 'life-science-chemistry',
+    universityId: DEFAULT_UNIVERSITY_ID,
     nameJa: '生命・応用化学科',
     nameEn: 'Life Science and Applied Chemistry',
     programType: 'advanced',
   },
   {
     id: 'physical-engineering',
+    universityId: DEFAULT_UNIVERSITY_ID,
     nameJa: '物理工学科',
     nameEn: 'Physical Science and Engineering',
     programType: 'advanced',
   },
   {
     id: 'electrical-mechanical',
+    universityId: DEFAULT_UNIVERSITY_ID,
     nameJa: '電気・機械工学科',
     nameEn: 'Electrical and Mechanical Engineering',
     programType: 'advanced',
   },
   {
     id: 'computer-science',
+    universityId: DEFAULT_UNIVERSITY_ID,
     nameJa: '情報工学科',
     nameEn: 'Computer Science',
     programType: 'advanced',
   },
   {
     id: 'social-engineering',
+    universityId: DEFAULT_UNIVERSITY_ID,
     nameJa: '社会工学科',
     nameEn: 'Architecture, Civil Engineering, and Industrial Management Engineering',
     programType: 'advanced',
   },
-  
+
   // 創造工学教育課程（6年一貫）
   {
     id: 'materials-energy',
+    universityId: DEFAULT_UNIVERSITY_ID,
     nameJa: '材料エネルギーコース',
     nameEn: 'Materials and Energy',
     programType: 'creative',
   },
   {
     id: 'computer-social',
+    universityId: DEFAULT_UNIVERSITY_ID,
     nameJa: '情報・社会コース',
     nameEn: 'Computer and Social Engineering',
     programType: 'creative',
   },
-  
+
   // 基幹工学教育課程（夜間主）5年課程
   {
     id: 'electrical-mechanical-evening',
+    universityId: DEFAULT_UNIVERSITY_ID,
     nameJa: '電気・機械工学コース',
     nameEn: 'Electrical and Mechanical Engineering',
     programType: 'core',
   },
   {
     id: 'environmental-urban',
+    universityId: DEFAULT_UNIVERSITY_ID,
     nameJa: '環境都市工学コース',
     nameEn: 'Environmental and Urban Engineering',
     programType: 'core',
@@ -65,6 +75,7 @@ export const DEPARTMENTS: Department[] = [
 export const TOPICS: Topic[] = [
   {
     id: 'assignments',
+    universityId: DEFAULT_UNIVERSITY_ID,
     departmentId: 'all',
     nameJa: '授業課題',
     nameEn: 'Assignments',
@@ -73,6 +84,7 @@ export const TOPICS: Topic[] = [
   },
   {
     id: 'lab-work',
+    universityId: DEFAULT_UNIVERSITY_ID,
     departmentId: 'all',
     nameJa: '実験課題',
     nameEn: 'Lab Work',
@@ -81,6 +93,7 @@ export const TOPICS: Topic[] = [
   },
   {
     id: 'midterm',
+    universityId: DEFAULT_UNIVERSITY_ID,
     departmentId: 'all',
     nameJa: '中間試験',
     nameEn: 'Midterm Exams',
@@ -89,6 +102,7 @@ export const TOPICS: Topic[] = [
   },
   {
     id: 'final',
+    universityId: DEFAULT_UNIVERSITY_ID,
     departmentId: 'all',
     nameJa: '期末試験',
     nameEn: 'Final Exams',
@@ -97,6 +111,7 @@ export const TOPICS: Topic[] = [
   },
   {
     id: 'graduate-exam',
+    universityId: DEFAULT_UNIVERSITY_ID,
     departmentId: 'all',
     nameJa: '大学院試験',
     nameEn: 'Graduate Exams',
@@ -105,6 +120,7 @@ export const TOPICS: Topic[] = [
   },
   {
     id: 'job-hunting',
+    universityId: DEFAULT_UNIVERSITY_ID,
     departmentId: 'all',
     nameJa: '就職活動',
     nameEn: 'Job Hunting',
@@ -113,6 +129,7 @@ export const TOPICS: Topic[] = [
   },
   {
     id: 'other',
+    universityId: DEFAULT_UNIVERSITY_ID,
     departmentId: 'all',
     nameJa: 'その他',
     nameEn: 'Other',
