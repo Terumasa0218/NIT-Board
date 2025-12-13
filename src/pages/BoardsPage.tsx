@@ -1,9 +1,12 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import { useI18n } from '@/utils/i18n'
 import { Search, Plus, MessageSquare, Clock, TrendingUp } from 'lucide-react'
 import type { Board } from '@/types'
-import { listBoardsByTopic } from '@/repositories/boardsRepository'
+import { listBoards } from '@/repositories/boardsRepository'
+import LoadingIndicator from '@/components/common/LoadingIndicator'
+import ErrorMessage from '@/components/common/ErrorMessage'
+import { useAppStore } from '@/stores/appStore'
 
 const TOPICS = [
   { id: 'assignments', name: '授業課題' },
@@ -19,47 +22,35 @@ type SortType = 'latest' | 'popular' | 'unanswered'
 
 export default function BoardsPage() {
   const { t } = useI18n()
+  const { selectedUniversityId } = useAppStore()
   const [searchParams] = useSearchParams()
   const [searchQuery, setSearchQuery] = useState('')
   const [sortType, setSortType] = useState<SortType>('latest')
   const [boards, setBoards] = useState<Board[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const topicId = searchParams.get('topic') || TOPICS[0]?.id
-  const currentTopic = TOPICS.find(t => t.id === topicId)
+  const topicId = searchParams.get('topic') ?? undefined
+  const currentTopic = topicId ? TOPICS.find(t => t.id === topicId) : null
+
+  const fetchBoards = useCallback(async () => {
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      const results = await listBoards({ topicId, universityId: selectedUniversityId })
+      setBoards(results)
+    } catch (err) {
+      console.error('Failed to fetch boards', err)
+      setError('掲示板の取得に失敗しました。時間をおいて再試行してください。')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [topicId, selectedUniversityId])
 
   useEffect(() => {
-    let isMounted = true
-    const fetchBoards = async () => {
-      if (!topicId) {
-        setBoards([])
-        setIsLoading(false)
-        return
-      }
-      setIsLoading(true)
-      try {
-        const results = await listBoardsByTopic(topicId)
-        if (isMounted) {
-          setBoards(results)
-        }
-      } catch (error) {
-        console.error('Failed to fetch boards', error)
-        if (isMounted) {
-          setBoards([])
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false)
-        }
-      }
-    }
-
     fetchBoards()
-
-    return () => {
-      isMounted = false
-    }
-  }, [topicId])
+  }, [fetchBoards])
 
   const filteredBoards = useMemo(() => {
     let result = [...boards]
@@ -89,22 +80,6 @@ export default function BoardsPage() {
 
   const handleSortChange = (newSortType: SortType) => {
     setSortType(newSortType)
-  }
-
-  if (isLoading) {
-    return (
-      <div className="max-w-4xl mx-auto p-6">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-muted rounded w-1/4"></div>
-          <div className="h-10 bg-muted rounded"></div>
-          <div className="space-y-3">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-20 bg-muted rounded"></div>
-            ))}
-          </div>
-        </div>
-      </div>
-    )
   }
 
   return (
@@ -161,7 +136,11 @@ export default function BoardsPage() {
       </div>
 
       {/* Boards List */}
-      {filteredBoards.length === 0 ? (
+      {isLoading ? (
+        <LoadingIndicator message="Loading boards..." />
+      ) : error ? (
+        <ErrorMessage message={error} onRetry={fetchBoards} />
+      ) : filteredBoards.length === 0 ? (
         <div className="text-center py-12">
           <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-lg font-medium text-foreground mb-2">

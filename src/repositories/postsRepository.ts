@@ -21,8 +21,26 @@ import { DEFAULT_UNIVERSITY_ID } from '@/constants/university'
 
 const postsCollection = collection(db, 'posts')
 
+function assertData(
+  data: DocumentData | undefined,
+  id: string,
+): asserts data is DocumentData {
+  if (!data) {
+    throw new Error(`Post document ${id} has no data`)
+  }
+}
+
+const toDate = (value: unknown, fallback: Date = new Date()): Date => {
+  if (value instanceof Timestamp) return value.toDate()
+  if (value instanceof Date) return value
+  if (value === null || value === undefined) return fallback
+  const parsed = new Date(value as string)
+  return Number.isNaN(parsed.getTime()) ? fallback : parsed
+}
+
 const toPost = (snapshot: QueryDocumentSnapshot<DocumentData> | DocumentSnapshot<DocumentData>): Post => {
   const data = snapshot.data()
+  assertData(data, snapshot.id)
 
   return {
     id: snapshot.id,
@@ -31,8 +49,8 @@ const toPost = (snapshot: QueryDocumentSnapshot<DocumentData> | DocumentSnapshot
     authorId: data.authorId,
     text: data.text,
     imageUrls: data.imageUrls || [],
-    createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : new Date(),
-    updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate() : new Date(),
+    createdAt: toDate(data.createdAt),
+    updatedAt: toDate(data.updatedAt),
     likeCount: data.likeCount ?? 0,
   }
 }
@@ -56,7 +74,11 @@ export const createPost = async (input: {
     throw new Error('Board not found')
   }
 
-  const boardData = boardSnapshot.data() as DocumentData
+  const boardData = boardSnapshot.data()
+
+  if (!boardData) {
+    throw new Error('Board data is missing')
+  }
   const now = serverTimestamp()
 
   const postRef = await addDoc(postsCollection, {
