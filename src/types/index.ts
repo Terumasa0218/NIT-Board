@@ -78,15 +78,17 @@ export interface Follow {
   createdAt: Date
 }
 
+export type ChatType = 'dm' | 'group'
+
 export interface Chat {
   id: string
   participantIds: string[]
-  type: 'dm' | 'group'
+  type: ChatType
   createdBy: string
   universityId: string
   createdAt: Date
   updatedAt: Date
-  lastMessageAt: Date | null
+  lastMessageAt?: Date | null
 }
 
 export interface Message {

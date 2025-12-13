@@ -268,6 +268,22 @@ export default function BoardPage() {
     return <div className="max-w-4xl mx-auto p-6 text-foreground">Board not found.</div>
   }
 
+  if (!boardId) {
+    return <div className="max-w-4xl mx-auto p-6 text-foreground">Board ID is missing.</div>
+  }
+
+  if (loadingBoard) {
+    return renderLoading()
+  }
+
+  if (errorBoard) {
+    return renderError(errorBoard, () => fetchBoard(boardId))
+  }
+
+  if (!board) {
+    return <div className="max-w-4xl mx-auto p-6 text-foreground">Board not found.</div>
+  }
+
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
       <div className="bg-card text-card-foreground rounded-lg p-6 shadow-sm border border-border">
