@@ -1,29 +1,309 @@
-import { useI18n } from '@/utils/i18n'
-import { User } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import type { ReactNode } from 'react'
+import { useParams } from 'react-router-dom'
+import { BookOpen, Crown, Edit2, Loader2, ThumbsUp, User as UserIcon, Users } from 'lucide-react'
+import { useAuthStore } from '@/stores/auth'
+import { getUserById, followUser, unfollowUser } from '@/repositories/usersRepository'
+import { listPostsByAuthor } from '@/repositories/postsRepository'
+import { getBoard } from '@/repositories/boardsRepository'
+import type { Board, User } from '@/types'
+import toast from 'react-hot-toast'
+
+interface UserStats {
+  answers: number
+  thanks: number
+  bestAnswers: number
+}
 
 export default function ProfilePage() {
-  const { t } = useI18n()
+  const { userId } = useParams<{ userId?: string }>()
+  const { user, userProfile, fetchUserProfile, updateProfile } = useAuthStore()
+
+  const [profile, setProfile] = useState<User | null>(null)
+  const [stats, setStats] = useState<UserStats>({ answers: 0, thanks: 0, bestAnswers: 0 })
+  const [loadingProfile, setLoadingProfile] = useState(false)
+  const [loadingStats, setLoadingStats] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [followLoading, setFollowLoading] = useState(false)
+
+  const [nickname, setNickname] = useState('')
+  const [department, setDepartment] = useState('')
+  const [grade, setGrade] = useState('')
+  const [circles, setCircles] = useState('')
+  const [bio, setBio] = useState('')
+
+  const isOwnProfile = useMemo(() => {
+    if (userId) {
+      return userId === user?.id
+    }
+    return true
+  }, [user?.id, userId])
+
+  const targetUserId = useMemo(() => {
+    if (isOwnProfile) return user?.id ?? null
+    return userId ?? null
+  }, [isOwnProfile, user?.id, userId])
+
+  const isFollowing = useMemo(() => {
+    if (!profile || !userProfile) return false
+    return (userProfile.following ?? []).includes(profile.id)
+  }, [profile, userProfile])
+
+  const loadProfile = async () => {
+    if (!targetUserId) return
+    setLoadingProfile(true)
+    try {
+      const fetched = isOwnProfile ? await fetchUserProfile() : await getUserById(targetUserId)
+      setProfile(fetched)
+      if (fetched) {
+        setNickname(fetched.nickname || '')
+        setDepartment(fetched.department || '')
+        setGrade(fetched.grade || '')
+        setCircles((fetched.circles || []).join(', '))
+        setBio(fetched.bio || '')
+      }
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setLoadingProfile(false)
+    }
+  }
+
+  const loadStats = async () => {
+    if (!targetUserId) return
+    setLoadingStats(true)
+    try {
+      const posts = await listPostsByAuthor(targetUserId)
+      const answers = posts.length
+      const thanks = posts.reduce((sum, post) => sum + (post.thanksCount ?? 0), 0)
+      const boardIds = Array.from(new Set(posts.map((p) => p.boardId)))
+      const boards = await Promise.all(boardIds.map((id) => getBoard(id)))
+      const boardMap: Record<string, Board> = {}
+      boards.forEach((b) => {
+        if (b) boardMap[b.id] = b
+      })
+      const bestAnswers = posts.filter((post) => boardMap[post.boardId]?.bestAnswerPostId === post.id).length
+      setStats({ answers, thanks, bestAnswers })
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setLoadingStats(false)
+    }
+  }
+
+  useEffect(() => {
+    loadProfile()
+  }, [targetUserId, isOwnProfile])
+
+  useEffect(() => {
+    loadStats()
+  }, [targetUserId])
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!isOwnProfile || !profile) return
+    setSaving(true)
+    try {
+      const circlesArray = circles
+        .split(',')
+        .map((c) => c.trim())
+        .filter(Boolean)
+      await updateProfile({ nickname, department, grade, circles: circlesArray, bio })
+      await loadProfile()
+      toast.success('プロフィールを更新しました')
+    } catch (error) {
+      console.error(error)
+      toast.error('プロフィールの更新に失敗しました')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleFollowToggle = async () => {
+    if (!profile || !user) return
+    setFollowLoading(true)
+    try {
+      if (isFollowing) {
+        await unfollowUser(user.id, profile.id)
+        toast.success('フォローを解除しました')
+      } else {
+        await followUser(user.id, profile.id)
+        toast.success('フォローしました')
+      }
+      await fetchUserProfile()
+      const refreshed = await getUserById(profile.id)
+      setProfile(refreshed)
+    } catch (error) {
+      console.error(error)
+      toast.error('フォロー操作に失敗しました')
+    } finally {
+      setFollowLoading(false)
+    }
+  }
+
+  if (!targetUserId) {
+    return (
+      <div className="max-w-3xl mx-auto p-6 text-foreground">
+        <p>ユーザー情報を取得できませんでした。</p>
+      </div>
+    )
+  }
+
+  if (loadingProfile && !profile) {
+    return (
+      <div className="max-w-3xl mx-auto p-6 text-foreground">
+        <p>プロフィールを読み込み中...</p>
+      </div>
+    )
+  }
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground mb-2">
-          {t('common.profile')}
-        </h1>
-        <p className="text-muted-foreground">
-          プロフィール設定
-        </p>
+    <div className="max-w-4xl mx-auto p-6 space-y-6">
+      <div className="bg-card border border-border rounded-lg p-6 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-16 h-16 rounded-full bg-primary/10 text-primary flex items-center justify-center text-2xl font-semibold">
+            {profile?.avatarUrl ? (
+              <img src={profile.avatarUrl} alt={profile.nickname} className="w-full h-full rounded-full object-cover" />
+            ) : (
+              (profile?.nickname?.charAt(0)?.toUpperCase() ?? '?')
+            )}
+          </div>
+          <div className="space-y-1">
+            <h1 className="text-2xl font-bold text-foreground">{profile?.nickname || 'ユーザー'}</h1>
+            <p className="text-muted-foreground text-sm">{profile?.bio || '自己紹介はまだありません'}</p>
+            <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+              {profile?.department && <span className="px-2 py-1 bg-muted rounded-full">{profile.department}</span>}
+              {profile?.grade && <span className="px-2 py-1 bg-muted rounded-full">{profile.grade}</span>}
+              {profile?.circles && profile.circles.length > 0 && (
+                <span className="px-2 py-1 bg-muted rounded-full">{profile.circles.join(', ')}</span>
+              )}
+            </div>
+          </div>
+        </div>
+        {!isOwnProfile && profile && (
+          <button
+            onClick={handleFollowToggle}
+            disabled={followLoading}
+            className={`btn ${isFollowing ? 'btn-outline' : 'btn-primary'} min-w-[140px]`}
+          >
+            {followLoading ? '処理中...' : isFollowing ? 'フォロー中' : 'フォローする'}
+          </button>
+        )}
       </div>
 
-      <div className="text-center py-12">
-        <User className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-foreground mb-2">
-          プロフィール設定
-        </h3>
-        <p className="text-muted-foreground">
-          ユーザー情報の編集とアバター設定がここに表示されます
-        </p>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <StatCard icon={<BookOpen className="h-4 w-4" />} label="回答数" value={stats.answers} loading={loadingStats} />
+        <StatCard icon={<ThumbsUp className="h-4 w-4" />} label="Thanks" value={stats.thanks} loading={loadingStats} />
+        <StatCard icon={<Crown className="h-4 w-4" />} label="ベストアンサー" value={stats.bestAnswers} loading={loadingStats} />
+        <StatCard
+          icon={<Users className="h-4 w-4" />}
+          label="フォロー / フォロワー"
+          value={`${profile?.following?.length ?? 0} / ${profile?.followers?.length ?? 0}`}
+          loading={loadingStats}
+        />
       </div>
+
+      {profile && (
+        <div className="bg-card border border-border rounded-lg p-6 shadow-sm space-y-4">
+          <div className="flex items-center gap-2 text-foreground">
+            <Edit2 className="h-4 w-4" />
+            <h2 className="text-lg font-semibold">プロフィール詳細</h2>
+          </div>
+          <div className="space-y-2 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <UserIcon className="h-4 w-4" />
+              <span>{profile.nickname}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <BookOpen className="h-4 w-4" />
+              <span>{profile.department || '学科未設定'}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <BookOpen className="h-4 w-4" />
+              <span>{profile.grade || '学年未設定'}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              <span>{profile.circles && profile.circles.length > 0 ? profile.circles.join(', ') : '所属サークル未設定'}</span>
+            </div>
+            <p className="text-foreground whitespace-pre-wrap">{profile.bio || '自己紹介はまだありません'}</p>
+          </div>
+        </div>
+      )}
+
+      {isOwnProfile && profile && (
+        <form onSubmit={handleSave} className="bg-card border border-border rounded-lg p-6 shadow-sm space-y-4">
+          <div className="flex items-center gap-2 text-foreground">
+            <Edit2 className="h-4 w-4" />
+            <h2 className="text-lg font-semibold">プロフィールを編集</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <label className="text-sm text-muted-foreground">ニックネーム</label>
+              <input
+                type="text"
+                value={nickname}
+                onChange={(e) => setNickname(e.target.value)}
+                className="input w-full"
+                required
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-sm text-muted-foreground">学科</label>
+              <input type="text" value={department} onChange={(e) => setDepartment(e.target.value)} className="input w-full" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-sm text-muted-foreground">学年</label>
+              <input type="text" value={grade} onChange={(e) => setGrade(e.target.value)} className="input w-full" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-sm text-muted-foreground">所属サークル（カンマ区切り）</label>
+              <input type="text" value={circles} onChange={(e) => setCircles(e.target.value)} className="input w-full" />
+            </div>
+            <div className="space-y-1 md:col-span-2">
+              <label className="text-sm text-muted-foreground">自己紹介</label>
+              <textarea
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                className="textarea w-full"
+                rows={4}
+                placeholder="自己紹介を入力してください"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              className="btn btn-primary flex items-center gap-2"
+              disabled={saving}
+            >
+              {saving && <Loader2 className="h-4 w-4 animate-spin" />} 保存
+            </button>
+          </div>
+        </form>
+      )}
+    </div>
+  )
+}
+
+function StatCard({
+  icon,
+  label,
+  value,
+  loading,
+}: {
+  icon: ReactNode
+  label: string
+  value: string | number
+  loading?: boolean
+}) {
+  return (
+    <div className="bg-card border border-border rounded-lg p-4 shadow-sm">
+      <div className="flex items-center gap-2 text-muted-foreground text-sm mb-2">
+        {icon}
+        <span>{label}</span>
+      </div>
+      <div className="text-2xl font-bold text-foreground">{loading ? <Loader2 className="h-5 w-5 animate-spin" /> : value}</div>
     </div>
   )
 }

@@ -10,10 +10,11 @@ import {
   User as FirebaseUser,
   Auth,
 } from 'firebase/auth'
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
+import { doc, serverTimestamp, setDoc } from 'firebase/firestore'
 import { auth, db } from '@/firebase'
 import type { User, AuthState } from '@/types'
 import { DEFAULT_UNIVERSITY_ID } from '@/constants/university'
+import { getUserById, updateUserProfile as updateUserProfileRepo } from '@/repositories/usersRepository'
 
 let initializationInProgress = false
 
@@ -25,6 +26,7 @@ interface AuthStore extends AuthState {
   sendPasswordReset: (email: string) => Promise<void>
   setupProfile: (nickname: string, avatarUrl?: string) => Promise<void>
   updateProfile: (updates: Partial<User>) => Promise<void>
+  fetchUserProfile: (userId?: string) => Promise<User | null>
   initializeAuth: () => Promise<() => void>
 }
 
@@ -54,6 +56,10 @@ const createUserDocument = async (
     avatarUrl,
     universityId: DEFAULT_UNIVERSITY_ID,
     suspendedUntil: undefined,
+    department: undefined,
+    grade: undefined,
+    circles: [],
+    bio: undefined,
     followers: [],
     following: [],
     preferredLocale: 'ja',
@@ -78,6 +84,22 @@ const createUserDocument = async (
     docData.avatarUrl = userData.avatarUrl
   }
 
+  if (userData.department !== undefined) {
+    docData.department = userData.department
+  }
+
+  if (userData.grade !== undefined) {
+    docData.grade = userData.grade
+  }
+
+  if (userData.circles !== undefined) {
+    docData.circles = userData.circles
+  }
+
+  if (userData.bio !== undefined) {
+    docData.bio = userData.bio
+  }
+
   if (userData.suspendedUntil !== undefined) {
     docData.suspendedUntil = userData.suspendedUntil
   }
@@ -90,40 +112,11 @@ const createUserDocument = async (
   }
 }
 
-const fetchUserDocument = async (uid: string): Promise<User | null> => {
-  try {
-    const userRef = doc(db, 'users', uid)
-    const userSnap = await getDoc(userRef)
-
-    if (!userSnap.exists()) {
-      console.log('AuthStore: User document does not exist for uid:', uid)
-      return null
-    }
-
-    const data = userSnap.data()
-    return {
-      id: uid,
-      email: data.email,
-      nickname: data.nickname,
-      universityId: data.universityId || DEFAULT_UNIVERSITY_ID,
-      avatarUrl: data.avatarUrl,
-      suspendedUntil: data.suspendedUntil?.toDate(),
-      followers: data.followers || [],
-      following: data.following || [],
-      preferredLocale: data.preferredLocale || 'ja',
-      createdAt: data.createdAt?.toDate() || new Date(),
-      updatedAt: data.updatedAt?.toDate() || new Date(),
-    }
-  } catch (error) {
-    console.error('AuthStore: Error fetching user document for uid:', uid, error)
-    return null
-  }
-}
-
 export const useAuthStore = create<AuthStore>()(
   persist(
     (set, get) => ({
       user: null,
+      userProfile: null,
       loading: true,
 
       login: async (email: string, password: string) => {
@@ -136,13 +129,13 @@ export const useAuthStore = create<AuthStore>()(
             throw new Error('EMAIL_NOT_VERIFIED')
           }
 
-          const user = await fetchUserDocument(firebaseUser.uid)
+          const userDoc = await getUserById(firebaseUser.uid)
 
-          if (user) {
-            if (user.suspendedUntil && user.suspendedUntil > new Date()) {
+          if (userDoc) {
+            if (userDoc.suspendedUntil && userDoc.suspendedUntil > new Date()) {
               throw new Error('USER_SUSPENDED')
             }
-            set({ user, loading: false })
+            set({ user: userDoc, userProfile: userDoc, loading: false })
           } else {
             const minimalUser: User = {
               id: firebaseUser.uid,
@@ -151,13 +144,17 @@ export const useAuthStore = create<AuthStore>()(
               universityId: DEFAULT_UNIVERSITY_ID,
               avatarUrl: undefined,
               suspendedUntil: undefined,
+              department: undefined,
+              grade: undefined,
+              circles: [],
+              bio: undefined,
               followers: [],
               following: [],
               preferredLocale: 'ja',
               createdAt: new Date(),
               updatedAt: new Date(),
             }
-            set({ user: minimalUser, loading: false })
+            set({ user: minimalUser, userProfile: minimalUser, loading: false })
           }
         } catch (error) {
           console.error('AuthStore: Login error:', error)
@@ -185,7 +182,7 @@ export const useAuthStore = create<AuthStore>()(
         set({ loading: true })
         try {
           await signOut(auth)
-          set({ user: null, loading: false })
+          set({ user: null, userProfile: null, loading: false })
         } catch (error) {
           set({ loading: false })
           throw error
@@ -211,8 +208,8 @@ export const useAuthStore = create<AuthStore>()(
         if (!firebaseUser) throw new Error('No Firebase user')
 
         try {
-          const user = await createUserDocument(firebaseUser, nickname, avatarUrl)
-          set({ user, loading: false })
+          const userDoc = await createUserDocument(firebaseUser, nickname, avatarUrl)
+          set({ user: userDoc, userProfile: userDoc, loading: false })
         } catch (error) {
           console.error('AuthStore: Profile setup failed:', error)
           throw error
@@ -224,19 +221,29 @@ export const useAuthStore = create<AuthStore>()(
         if (!user) throw new Error('No user logged in')
 
         try {
-          const userRef = doc(db, 'users', user.id)
-          const updateData = {
-            ...updates,
-            updatedAt: serverTimestamp(),
+          await updateUserProfileRepo(user.id, updates)
+          const refreshed = await getUserById(user.id)
+          if (refreshed) {
+            set({ user: refreshed, userProfile: refreshed })
           }
-
-          await updateDoc(userRef, updateData)
-
-          const updatedUser = { ...user, ...updates, updatedAt: new Date() }
-          set({ user: updatedUser })
         } catch (error) {
           console.error('AuthStore: Profile update failed:', error)
           throw error
+        }
+      },
+
+      fetchUserProfile: async (userId?: string) => {
+        const targetId = userId ?? get().user?.id
+        if (!targetId) return null
+        try {
+          const profile = await getUserById(targetId)
+          if (userId === undefined && profile) {
+            set({ userProfile: profile, user: profile })
+          }
+          return profile
+        } catch (error) {
+          console.error('AuthStore: fetchUserProfile failed', error)
+          return null
         }
       },
 
@@ -255,25 +262,25 @@ export const useAuthStore = create<AuthStore>()(
 
         const handleUserState = async (firebaseUser: FirebaseUser | null) => {
           if (!firebaseUser) {
-            set({ user: null, loading: false })
+            set({ user: null, userProfile: null, loading: false })
             return
           }
 
           if (!firebaseUser.emailVerified) {
-            set({ loading: false, user: null })
+            set({ loading: false, user: null, userProfile: null })
             return
           }
 
           try {
-            const user = await fetchUserDocument(firebaseUser.uid)
-            if (user && (!user.suspendedUntil || user.suspendedUntil <= new Date())) {
-              set({ user, loading: false })
+            const userDoc = await getUserById(firebaseUser.uid)
+            if (userDoc && (!userDoc.suspendedUntil || userDoc.suspendedUntil <= new Date())) {
+              set({ user: userDoc, userProfile: userDoc, loading: false })
             } else {
-              set({ user: null, loading: false })
+              set({ user: null, userProfile: null, loading: false })
             }
           } catch (error) {
             console.error('AuthStore: Error fetching user document:', error)
-            set({ user: null, loading: false })
+            set({ user: null, userProfile: null, loading: false })
           }
         }
 
@@ -297,7 +304,7 @@ export const useAuthStore = create<AuthStore>()(
         } catch (error) {
           clearTimeout(warnTimeout)
           console.error('AuthStore: Auth initialization failed:', error)
-          set({ user: null, loading: false })
+          set({ user: null, userProfile: null, loading: false })
           initializationInProgress = false
           return () => {}
         }
@@ -313,6 +320,15 @@ export const useAuthStore = create<AuthStore>()(
               nickname: state.user.nickname,
               preferredLocale: state.user.preferredLocale,
               universityId: state.user.universityId,
+            }
+          : null,
+        userProfile: state.userProfile
+          ? {
+              id: state.userProfile.id,
+              email: state.userProfile.email,
+              nickname: state.userProfile.nickname,
+              preferredLocale: state.userProfile.preferredLocale,
+              universityId: state.userProfile.universityId,
             }
           : null,
       }),
