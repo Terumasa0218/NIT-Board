@@ -1,5 +1,4 @@
 import {
-  addDoc,
   collection,
   doc,
   getDoc,
@@ -10,6 +9,7 @@ import {
   runTransaction,
   serverTimestamp,
   Timestamp,
+  updateDoc,
   where,
   type DocumentData,
   type DocumentSnapshot,
@@ -20,9 +20,13 @@ import type { Post } from '@/types'
 import { DEFAULT_UNIVERSITY_ID } from '@/constants/university'
 
 const postsCollection = collection(db, 'posts')
+const boardsCollection = collection(db, 'boards')
 
 const toPost = (snapshot: QueryDocumentSnapshot<DocumentData> | DocumentSnapshot<DocumentData>): Post => {
   const data = snapshot.data()
+  if (!data) {
+    throw new Error('Post data is missing')
+  }
 
   return {
     id: snapshot.id,
@@ -33,7 +37,9 @@ const toPost = (snapshot: QueryDocumentSnapshot<DocumentData> | DocumentSnapshot
     imageUrls: data.imageUrls || [],
     createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : new Date(),
     updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate() : new Date(),
-    likeCount: data.likeCount ?? 0,
+    thanksCount: data.thanksCount ?? data.likeCount ?? 0,
+    likeCount: data.likeCount,
+    isBestAnswer: data.isBestAnswer ?? false,
   }
 }
 
@@ -43,46 +49,45 @@ export const listPostsByBoard = async (boardId: string): Promise<Post[]> => {
   return snapshot.docs.map((docSnapshot) => toPost(docSnapshot))
 }
 
-export const createPost = async (input: {
-  boardId: string
-  authorId: string
-  text: string
-  imageUrls?: string[]
-}): Promise<Post> => {
-  const boardRef = doc(db, 'boards', input.boardId)
-  const boardSnapshot = await getDoc(boardRef)
-
-  if (!boardSnapshot.exists()) {
-    throw new Error('Board not found')
-  }
-
-  const boardData = boardSnapshot.data() as DocumentData
-  const now = serverTimestamp()
-
-  const postRef = await addDoc(postsCollection, {
-    boardId: input.boardId,
-    authorId: input.authorId,
-    text: input.text,
-    imageUrls: input.imageUrls ?? [],
-    likeCount: 0,
-    universityId: boardData.universityId || DEFAULT_UNIVERSITY_ID,
-    createdAt: now,
-    updatedAt: now,
-  })
+export const createPost = async (input: { boardId: string; authorId: string; text: string }): Promise<Post> => {
+  const postRef = doc(postsCollection)
+  const boardRef = doc(boardsCollection, input.boardId)
 
   await runTransaction(db, async (transaction) => {
-    const snapshot = await transaction.get(boardRef)
-    if (!snapshot.exists()) {
-      throw new Error('Board not found during update')
+    const boardSnapshot = await transaction.get(boardRef)
+    if (!boardSnapshot.exists()) {
+      throw new Error('Board not found')
     }
+
+    const boardData = boardSnapshot.data() as DocumentData
+    const now = serverTimestamp()
+
+    transaction.set(postRef, {
+      boardId: input.boardId,
+      authorId: input.authorId,
+      text: input.text,
+      imageUrls: [],
+      thanksCount: 0,
+      universityId: boardData.universityId || DEFAULT_UNIVERSITY_ID,
+      createdAt: now,
+      updatedAt: now,
+    })
 
     transaction.update(boardRef, {
       postCount: increment(1),
-      latestPostAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
+      latestPostAt: now,
+      updatedAt: now,
     })
   })
 
   const createdSnapshot = await getDoc(postRef)
   return toPost(createdSnapshot)
+}
+
+export const incrementThanks = async (postId: string): Promise<void> => {
+  const postRef = doc(postsCollection, postId)
+  await updateDoc(postRef, {
+    thanksCount: increment(1),
+    updatedAt: serverTimestamp(),
+  })
 }
