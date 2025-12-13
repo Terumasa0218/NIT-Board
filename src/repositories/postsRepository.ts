@@ -49,6 +49,12 @@ export const listPostsByBoard = async (boardId: string): Promise<Post[]> => {
   return snapshot.docs.map((docSnapshot) => toPost(docSnapshot))
 }
 
+export const listPostsByAuthor = async (authorId: string): Promise<Post[]> => {
+  const postsQuery = query(postsCollection, where('authorId', '==', authorId), orderBy('createdAt', 'desc'))
+  const snapshot = await getDocs(postsQuery)
+  return snapshot.docs.map((docSnapshot) => toPost(docSnapshot))
+}
+
 export const createPost = async (input: { boardId: string; authorId: string; text: string }): Promise<Post> => {
   const postRef = doc(postsCollection)
   const boardRef = doc(boardsCollection, input.boardId)

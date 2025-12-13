@@ -1,16 +1,33 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useParams } from 'react-router-dom'
-import { Crown, MessageSquare, RefreshCw, Send, ThumbsUp } from 'lucide-react'
+import { Link, useParams } from 'react-router-dom'
+import { Crown, MessageSquare, RefreshCw, Send, ThumbsUp, User as UserIcon } from 'lucide-react'
 import { getBoard, setBestAnswer } from '@/repositories/boardsRepository'
 import { createPost, incrementThanks, listPostsByBoard } from '@/repositories/postsRepository'
-import type { Board, Post } from '@/types'
+import { getTopicById } from '@/repositories/topicsRepository'
+import { getUsersByIds } from '@/repositories/usersRepository'
+import type { Board, Post, Topic, User } from '@/types'
 import { useAuthStore } from '@/stores/auth'
+
+const Avatar = ({ user }: { user?: User }) => {
+  const initial = user?.nickname?.charAt(0)?.toUpperCase() ?? '?'
+  return (
+    <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-semibold">
+      {user?.avatarUrl ? (
+        <img src={user.avatarUrl} alt={user.nickname} className="w-full h-full rounded-full object-cover" />
+      ) : (
+        initial
+      )}
+    </div>
+  )
+}
 
 export default function BoardPage() {
   const { boardId } = useParams<{ boardId: string }>()
   const authUserId = useAuthStore((state) => state.user?.id ?? null)
 
   const [board, setBoard] = useState<Board | null>(null)
+  const [topic, setTopic] = useState<Topic | null>(null)
+  const [usersMap, setUsersMap] = useState<Record<string, User>>({})
   const [posts, setPosts] = useState<Post[]>([])
   const [loadingBoard, setLoadingBoard] = useState(false)
   const [loadingPosts, setLoadingPosts] = useState(false)
@@ -18,7 +35,7 @@ export default function BoardPage() {
   const [errorPosts, setErrorPosts] = useState<string | null>(null)
   const [newPostText, setNewPostText] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [thanksUpdating, setThanksUpdating] = useState<Record<string, boolean>>({})
+  const [pendingThanksPostIds, setPendingThanksPostIds] = useState<Set<string>>(new Set())
 
   const isBoardOwner = useMemo(() => {
     if (!board || !authUserId) return false
@@ -53,12 +70,34 @@ export default function BoardPage() {
     }
   }
 
+  const fetchTopic = async (topicId: string) => {
+    try {
+      const fetchedTopic = await getTopicById(topicId)
+      setTopic(fetchedTopic)
+    } catch (error) {
+      console.error(error)
+      setTopic(null)
+    }
+  }
+
+  const fetchUsers = async (ids: string[]) => {
+    try {
+      const users = await getUsersByIds(ids)
+      setUsersMap((prev) => ({ ...prev, ...users }))
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
   const fetchPosts = async (id: string, currentBoard: Board | null) => {
     setLoadingPosts(true)
     setErrorPosts(null)
     try {
       const result = await listPostsByBoard(id)
       setPosts(applyBestAnswerFlag(currentBoard, result))
+      const authorIds = result.map((post) => post.authorId)
+      const boardOwnerId = currentBoard?.createdBy ? [currentBoard.createdBy] : []
+      await fetchUsers([...authorIds, ...boardOwnerId])
     } catch (error) {
       console.error(error)
       setErrorPosts('Failed to load posts')
@@ -79,6 +118,12 @@ export default function BoardPage() {
   }, [boardId])
 
   useEffect(() => {
+    if (board?.topicId) {
+      fetchTopic(board.topicId)
+    }
+  }, [board?.topicId])
+
+  useEffect(() => {
     if (!boardId) return
     fetchPosts(boardId, board)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -93,6 +138,7 @@ export default function BoardPage() {
       const created = await createPost({ boardId, authorId: authUserId, text: newPostText.trim() })
       setNewPostText('')
       setPosts((prev) => applyBestAnswerFlag(board, [...prev, created]))
+      await fetchUsers([authUserId])
     } catch (error) {
       console.error(error)
       setErrorPosts('Failed to submit post')
@@ -102,7 +148,12 @@ export default function BoardPage() {
   }
 
   const handleIncrementThanks = async (postId: string) => {
-    setThanksUpdating((prev) => ({ ...prev, [postId]: true }))
+    if (pendingThanksPostIds.has(postId)) return
+    setPendingThanksPostIds((prev) => {
+      const next = new Set(prev)
+      next.add(postId)
+      return next
+    })
     try {
       await incrementThanks(postId)
       setPosts((prev) =>
@@ -112,7 +163,11 @@ export default function BoardPage() {
       console.error(error)
       setErrorPosts('Failed to send thanks')
     } finally {
-      setThanksUpdating((prev) => ({ ...prev, [postId]: false }))
+      setPendingThanksPostIds((prev) => {
+        const next = new Set(prev)
+        next.delete(postId)
+        return next
+      })
     }
   }
 
@@ -155,6 +210,48 @@ export default function BoardPage() {
     </div>
   )
 
+  const renderUserInfo = (userId: string) => {
+    const user = usersMap[userId]
+    return (
+      <div className="flex items-center gap-3">
+        <Avatar user={user} />
+        <div className="flex flex-col">
+          <Link to={`/users/${userId}`} className="text-sm font-semibold text-foreground hover:underline">
+            {user?.nickname ?? 'Unknown User'}
+          </Link>
+          <span className="text-xs text-muted-foreground">{userId}</span>
+        </div>
+      </div>
+    </div>
+  )
+
+  const renderError = (message: string, retry: () => void) => (
+    <div className="max-w-4xl mx-auto p-6">
+      <div className="bg-destructive/10 text-destructive p-4 rounded flex items-center justify-between">
+        <span>{message}</span>
+        <button onClick={retry} className="btn btn-outline btn-sm">
+          <RefreshCw className="h-4 w-4 mr-1" /> 再読み込み
+        </button>
+      </div>
+    </div>
+  )
+
+  if (!boardId) {
+    return <div className="max-w-4xl mx-auto p-6 text-foreground">Board ID is missing.</div>
+  }
+
+  if (loadingBoard) {
+    return renderLoading()
+  }
+
+  if (errorBoard) {
+    return renderError(errorBoard, () => fetchBoard(boardId))
+  }
+
+  if (!board) {
+    return <div className="max-w-4xl mx-auto p-6 text-foreground">Board not found.</div>
+  }
+
   if (!boardId) {
     return <div className="max-w-4xl mx-auto p-6 text-foreground">Board ID is missing.</div>
   }
@@ -175,14 +272,19 @@ export default function BoardPage() {
     <div className="max-w-4xl mx-auto p-6 space-y-6">
       <div className="bg-card text-card-foreground rounded-lg p-6 shadow-sm border border-border">
         <div className="flex items-start justify-between">
-          <div>
-            <p className="text-sm text-muted-foreground mb-2">Topic: {board.topicId}</p>
-            <h1 className="text-2xl font-bold text-foreground mb-2">{board.title}</h1>
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span className="px-2 py-1 bg-primary/10 text-primary rounded-full text-xs">{topic?.nameJa ?? 'Topic'}</span>
+              <span className="px-2 py-1 bg-muted rounded-full text-xs">{board.boardType.toUpperCase()}</span>
+            </div>
+            <h1 className="text-2xl font-bold text-foreground">{board.title}</h1>
             {board.description && <p className="text-muted-foreground whitespace-pre-wrap">{board.description}</p>}
-            <div className="flex flex-wrap items-center gap-3 mt-3 text-sm text-muted-foreground">
-              <span>作成者: {board.createdBy}</span>
-              <span>•</span>
-              <span>{board.createdAt.toLocaleString()}</span>
+            <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <UserIcon className="h-4 w-4" />
+                {renderUserInfo(board.createdBy)}
+              </div>
+              <span className="text-xs text-muted-foreground">{board.createdAt.toLocaleString()}</span>
               {board.bestAnswerPostId && (
                 <span className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-500/10 text-emerald-600 rounded text-xs font-medium">
                   <Crown className="h-4 w-4" /> ベストアンサーあり
@@ -214,14 +316,16 @@ export default function BoardPage() {
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="font-semibold text-foreground">{post.authorId}</span>
-                      <span className="text-xs text-muted-foreground">{post.createdAt.toLocaleString()}</span>
-                      {post.isBestAnswer && (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-500/10 text-emerald-600 rounded text-xs font-medium">
-                          <Crown className="h-4 w-4" /> ベストアンサー
-                        </span>
-                      )}
+                    <div className="flex items-start justify-between gap-4 mb-3">
+                      {renderUserInfo(post.authorId)}
+                      <div className="flex flex-col items-end gap-1 text-xs text-muted-foreground">
+                        <span>{post.createdAt.toLocaleString()}</span>
+                        {post.isBestAnswer && (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-500/10 text-emerald-600 rounded text-xs font-medium">
+                            <Crown className="h-4 w-4" /> ベストアンサー
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <p className="text-foreground whitespace-pre-wrap leading-relaxed">{post.text}</p>
                   </div>
@@ -230,7 +334,7 @@ export default function BoardPage() {
                   <button
                     className="inline-flex items-center gap-1 px-3 py-1 rounded bg-primary/10 text-primary text-sm disabled:opacity-50"
                     onClick={() => handleIncrementThanks(post.id)}
-                    disabled={!!thanksUpdating[post.id]}
+                    disabled={pendingThanksPostIds.has(post.id)}
                   >
                     <ThumbsUp className="h-4 w-4" /> Thanks {post.thanksCount}
                   </button>

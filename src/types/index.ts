@@ -5,8 +5,12 @@ export interface User {
   universityId: string
   avatarUrl?: string
   suspendedUntil?: Date
-  followers: string[]
-  following: string[]
+  department?: string
+  grade?: string
+  circles?: string[]
+  bio?: string
+  followers?: string[]
+  following?: string[]
   preferredLocale: 'ja' | 'en'
   createdAt: Date
   updatedAt: Date
@@ -157,6 +161,7 @@ export type Locale = 'ja' | 'en'
 
 export interface AuthState {
   user: User | null
+  userProfile: User | null
   loading: boolean
 }
 
