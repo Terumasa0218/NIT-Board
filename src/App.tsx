@@ -107,6 +107,10 @@ function App() {
             element={needsProfileSetup ? <Navigate to="/profile-setup" replace /> : <ProfilePage />}
           />
           <Route
+            path="users/:userId"
+            element={needsProfileSetup ? <Navigate to="/profile-setup" replace /> : <ProfilePage />}
+          />
+          <Route
             path="settings"
             element={needsProfileSetup ? <Navigate to="/profile-setup" replace /> : <SettingsPage />}
           />
