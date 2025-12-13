@@ -2,17 +2,10 @@ import { NavLink } from 'react-router-dom'
 import { useMemo } from 'react'
 import { useAuthStore } from '@/stores/auth'
 import { useI18n } from '@/utils/i18n'
-import {
-  Home,
-  MessageSquare,
-  Calendar,
-  Settings,
-  User,
-  Layers
-} from 'lucide-react'
+import { Home, MessageSquare, Calendar, Settings, User, Layers } from 'lucide-react'
 
 export default function Sidebar() {
-  const { user, isGuest } = useAuthStore()
+  const { user } = useAuthStore()
   const { t } = useI18n()
 
   const navItems = useMemo(() => [
@@ -36,29 +29,33 @@ export default function Sidebar() {
       icon: Calendar,
       label: t('nav.events'),
     },
-    ...(user && !isGuest ? [
-      {
-        to: '/messages',
-        icon: MessageSquare,
-        label: t('nav.messages'),
-      },
-    ] : []),
-  ], [t, user, isGuest])
+    ...(user
+      ? [
+          {
+            to: '/messages',
+            icon: MessageSquare,
+            label: t('nav.messages'),
+          },
+        ]
+      : []),
+  ], [t, user])
 
   const bottomItems = useMemo(() => [
-    ...(user && !isGuest ? [
-      {
-        to: '/profile',
-        icon: User,
-        label: 'プロフィール',
-      },
-    ] : []),
+    ...(user
+      ? [
+          {
+            to: '/profile',
+            icon: User,
+            label: 'プロフィール',
+          },
+        ]
+      : []),
     {
       to: '/settings',
       icon: Settings,
       label: '設定',
     },
-  ], [user, isGuest])
+  ], [user])
 
   return (
     <div className="w-64 bg-card border-r border-border flex flex-col">

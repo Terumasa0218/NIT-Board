@@ -1,132 +1,188 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
 import { useI18n } from '@/utils/i18n'
 import { MessageSquare, Send, User } from 'lucide-react'
+import type { Board, Post } from '@/types'
+import { getBoard } from '@/repositories/boardsRepository'
+import { createPost, listPostsByBoard } from '@/repositories/postsRepository'
+import LoadingIndicator from '@/components/common/LoadingIndicator'
+import ErrorMessage from '@/components/common/ErrorMessage'
+import { useAuthStore } from '@/stores/auth'
 
 export default function BoardPage() {
-  const { boardId } = useParams()
+  const { boardId } = useParams<{ boardId: string }>()
   const { t } = useI18n()
-  const [posts, setPosts] = useState<any[]>([])
+  const { user } = useAuthStore()
+
+  const [board, setBoard] = useState<Board | null>(null)
+  const [posts, setPosts] = useState<Post[]>([])
   const [newPost, setNewPost] = useState('')
-  const [isLoading, setIsLoading] = useState(true)
+  const [loadingBoard, setLoadingBoard] = useState(true)
+  const [loadingPosts, setLoadingPosts] = useState(true)
+  const [errorBoard, setErrorBoard] = useState<string | null>(null)
+  const [errorPosts, setErrorPosts] = useState<string | null>(null)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  useEffect(() => {
-    // TODO: Fetch board and posts from Firestore
-    // For now, using mock data
-    const mockPosts = [
-      {
-        id: '1',
-        content: '制御工学基礎の課題1について質問があります。',
-        author: '田中太郎',
-        createdAt: new Date(Date.now() - 1000 * 60 * 30),
-        isSolved: false,
-      },
-      {
-        id: '2',
-        content: 'この課題は以下のように解けます。',
-        author: '佐藤花子',
-        createdAt: new Date(Date.now() - 1000 * 60 * 15),
-        isSolved: true,
-      },
-    ]
-
-    setPosts(mockPosts)
-    setIsLoading(false)
+  const fetchBoard = useCallback(async () => {
+    if (!boardId) return
+    setLoadingBoard(true)
+    setErrorBoard(null)
+    try {
+      const result = await getBoard(boardId)
+      if (!result) {
+        setBoard(null)
+        setErrorBoard('スレッドが見つかりません')
+      } else {
+        setBoard(result)
+      }
+    } catch (err) {
+      console.error('Failed to fetch board', err)
+      setErrorBoard('掲示板の取得に失敗しました')
+    } finally {
+      setLoadingBoard(false)
+    }
   }, [boardId])
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!newPost.trim()) return
+  const fetchPosts = useCallback(async () => {
+    if (!boardId) return
+    setLoadingPosts(true)
+    setErrorPosts(null)
+    try {
+      const result = await listPostsByBoard(boardId)
+      setPosts(result)
+    } catch (err) {
+      console.error('Failed to fetch posts', err)
+      setErrorPosts('投稿の取得に失敗しました')
+    } finally {
+      setLoadingPosts(false)
+    }
+  }, [boardId])
 
-    // TODO: Add post to Firestore
-    const newPostObj = {
-      id: Date.now().toString(),
-      content: newPost,
-      author: '現在のユーザー',
-      createdAt: new Date(),
-      isSolved: false,
+  useEffect(() => {
+    fetchBoard()
+    fetchPosts()
+  }, [fetchBoard, fetchPosts])
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!boardId || !user) return
+    if (!newPost.trim()) {
+      setSubmitError('投稿内容を入力してください')
+      return
     }
 
-    // 最新投稿を一番下に追加
-    setPosts([...posts, newPostObj])
-    setNewPost('')
+    setIsSubmitting(true)
+    setSubmitError(null)
+    try {
+      const created = await createPost({
+        boardId,
+        authorId: user.id,
+        text: newPost.trim(),
+      })
+      setPosts((prev) => [created, ...prev])
+      setNewPost('')
+    } catch (err) {
+      console.error('Failed to create post', err)
+      setSubmitError('投稿に失敗しました。時間をおいて再試行してください。')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
-  if (isLoading) {
+  if (loadingBoard) {
     return (
       <div className="max-w-4xl mx-auto p-6">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-muted rounded w-1/3"></div>
-          <div className="space-y-3">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-24 bg-muted rounded"></div>
-            ))}
-          </div>
-        </div>
+        <LoadingIndicator message="Loading board..." />
+      </div>
+    )
+  }
+
+  if (errorBoard) {
+    return (
+      <div className="max-w-4xl mx-auto p-6 space-y-4">
+        <ErrorMessage message={errorBoard} onRetry={fetchBoard} />
+      </div>
+    )
+  }
+
+  if (!board) {
+    return (
+      <div className="max-w-4xl mx-auto p-6 space-y-4">
+        <ErrorMessage message="スレッドが見つかりません" />
       </div>
     )
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-4xl mx-auto p-6 space-y-6">
       {/* Header */}
-      <div className="mb-6">
+      <div className="mb-2">
         <h1 className="text-2xl font-bold text-foreground mb-2">
-          制御工学基礎 課題1
+          {board.title}
         </h1>
-        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-          <span>授業課題</span>
-          <span>•</span>
-          <span>15 投稿</span>
-          <span>•</span>
-          <span>30分前に更新</span>
+        <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+          <span>投稿数: {board.postCount}</span>
+          <span>作成者: {board.createdBy}</span>
+          <span>作成日: {board.createdAt.toLocaleString()}</span>
         </div>
       </div>
 
       {/* Posts */}
-      {posts.length === 0 ? (
-        <div className="text-center py-12">
-          <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-foreground mb-2">
-            {t('empty.posts')}
-          </h3>
-          <p className="text-muted-foreground">
-            最初の投稿をしてみましょう
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-4 mb-6">
-          {posts.map((post) => (
-            <div key={post.id} className="card">
-              <div className="card-content">
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                    <User className="h-4 w-4 text-primary" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="font-medium text-foreground">
-                        {post.author}
-                      </span>
-                      <span className="text-sm text-muted-foreground">
-                        {post.createdAt.toLocaleDateString()}
-                      </span>
-                      {post.isSolved && (
-                        <span className="badge badge-success">
-                          {t('boards.badges.solved')}
-                        </span>
-                      )}
+      <div className="space-y-4">
+        <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+          <MessageSquare className="h-5 w-5" />
+          投稿一覧
+        </h2>
+
+        {loadingPosts ? (
+          <LoadingIndicator message="Loading posts..." />
+        ) : errorPosts ? (
+          <ErrorMessage message={errorPosts} onRetry={fetchPosts} />
+        ) : posts.length === 0 ? (
+          <div className="text-center py-12">
+            <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-foreground mb-2">
+              {t('empty.posts')}
+            </h3>
+            <p className="text-muted-foreground">
+              最初の投稿をしてみましょう
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {posts.map((post) => (
+              <div key={post.id} className="card">
+                <div className="card-content">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                      <User className="h-4 w-4 text-primary" />
                     </div>
-                    <p className="text-foreground whitespace-pre-wrap">
-                      {post.content}
-                    </p>
+                    <div className="flex-1">
+                      <div className="flex flex-wrap items-center gap-2 mb-2">
+                        <span className="font-medium text-foreground">
+                          {post.authorId}
+                        </span>
+                        <span className="text-sm text-muted-foreground">
+                          {post.createdAt.toLocaleString()}
+                        </span>
+                        {post.likeCount > 0 && (
+                          <span className="badge badge-outline">
+                            {post.likeCount} likes
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-foreground whitespace-pre-wrap">
+                        {post.text}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* New Post Form */}
       <div className="card">
@@ -145,14 +201,17 @@ export default function BoardPage() {
                 rows={3}
               />
             </div>
+            {submitError && (
+              <p className="text-sm text-destructive">{submitError}</p>
+            )}
             <div className="flex justify-end">
               <button
                 type="submit"
-                disabled={!newPost.trim()}
+                disabled={!newPost.trim() || isSubmitting}
                 className="btn btn-primary"
               >
                 <Send className="h-4 w-4 mr-2" />
-                投稿
+                {isSubmitting ? '送信中...' : '投稿'}
               </button>
             </div>
           </form>

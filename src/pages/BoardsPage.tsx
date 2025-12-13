@@ -1,14 +1,19 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import { useI18n } from '@/utils/i18n'
 import { Search, Plus, MessageSquare, Clock, TrendingUp } from 'lucide-react'
+import type { Board } from '@/types'
+import { listBoards } from '@/repositories/boardsRepository'
+import LoadingIndicator from '@/components/common/LoadingIndicator'
+import ErrorMessage from '@/components/common/ErrorMessage'
+import { useAppStore } from '@/stores/appStore'
 
 const TOPICS = [
   { id: 'assignments', name: '授業課題' },
   { id: 'lab-work', name: '実験課題' },
   { id: 'midterm', name: '中間試験' },
   { id: 'final', name: '期末試験' },
-  { id: 'graduate', name: '大学院試験' },
+  { id: 'graduate-exam', name: '大学院試験' },
   { id: 'job-hunting', name: '就職活動' },
   { id: 'other', name: 'その他' },
 ]
@@ -17,88 +22,64 @@ type SortType = 'latest' | 'popular' | 'unanswered'
 
 export default function BoardsPage() {
   const { t } = useI18n()
+  const { selectedUniversityId } = useAppStore()
   const [searchParams] = useSearchParams()
   const [searchQuery, setSearchQuery] = useState('')
   const [sortType, setSortType] = useState<SortType>('latest')
-  const [boards, setBoards] = useState<any[]>([])
+  const [boards, setBoards] = useState<Board[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const topicId = searchParams.get('topic')
-  const currentTopic = TOPICS.find(t => t.id === topicId)
+  const topicId = searchParams.get('topic') ?? undefined
+  const currentTopic = topicId ? TOPICS.find(t => t.id === topicId) : null
+
+  const fetchBoards = useCallback(async () => {
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      const results = await listBoards({ topicId, universityId: selectedUniversityId })
+      setBoards(results)
+    } catch (err) {
+      console.error('Failed to fetch boards', err)
+      setError('掲示板の取得に失敗しました。時間をおいて再試行してください。')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [topicId, selectedUniversityId])
 
   useEffect(() => {
-    // TODO: Fetch boards from Firestore
-    // For now, using mock data
-    const mockBoards = [
-      {
-        id: '1',
-        title: '制御工学基礎 課題1',
-        topicId: 'assignments',
-        topicName: '授業課題',
-        postCount: 15,
-        latestPostAt: new Date(Date.now() - 1000 * 60 * 30),
-        isSolved: false,
-      },
-      {
-        id: '2',
-        title: '物理数学 中間試験対策',
-        topicId: 'midterm',
-        topicName: '中間試験',
-        postCount: 8,
-        latestPostAt: new Date(Date.now() - 1000 * 60 * 60 * 2),
-        isSolved: true,
-      },
-    ]
+    fetchBoards()
+  }, [fetchBoards])
 
-    let filteredBoards = mockBoards
+  const filteredBoards = useMemo(() => {
+    let result = [...boards]
 
-    // Filter by topic
-    if (topicId) {
-      filteredBoards = filteredBoards.filter(board => board.topicId === topicId)
-    }
-
-    // Filter by search query
     if (searchQuery) {
-      filteredBoards = filteredBoards.filter(board => 
-        board.title.toLowerCase().includes(searchQuery.toLowerCase())
-      )
+      result = result.filter(board => board.title.toLowerCase().includes(searchQuery.toLowerCase()))
     }
 
-    // Sort boards
     switch (sortType) {
       case 'latest':
-        filteredBoards.sort((a, b) => b.latestPostAt.getTime() - a.latestPostAt.getTime())
+        result.sort((a, b) => {
+          const aTime = (a.latestPostAt || a.createdAt).getTime()
+          const bTime = (b.latestPostAt || b.createdAt).getTime()
+          return bTime - aTime
+        })
         break
       case 'popular':
-        filteredBoards.sort((a, b) => b.postCount - a.postCount)
+        result.sort((a, b) => b.postCount - a.postCount)
         break
       case 'unanswered':
-        filteredBoards.sort((a, b) => Number(a.isSolved) - Number(b.isSolved))
+        result.sort((a, b) => Number(Boolean(a.latestPostAt)) - Number(Boolean(b.latestPostAt)))
         break
     }
 
-    setBoards(filteredBoards)
-    setIsLoading(false)
-  }, [topicId, searchQuery, sortType])
+    return result
+  }, [boards, searchQuery, sortType])
 
   const handleSortChange = (newSortType: SortType) => {
     setSortType(newSortType)
-  }
-
-  if (isLoading) {
-    return (
-      <div className="max-w-4xl mx-auto p-6">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-muted rounded w-1/4"></div>
-          <div className="h-10 bg-muted rounded"></div>
-          <div className="space-y-3">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-20 bg-muted rounded"></div>
-            ))}
-          </div>
-        </div>
-      </div>
-    )
   }
 
   return (
@@ -155,7 +136,11 @@ export default function BoardsPage() {
       </div>
 
       {/* Boards List */}
-      {boards.length === 0 ? (
+      {isLoading ? (
+        <LoadingIndicator message="Loading boards..." />
+      ) : error ? (
+        <ErrorMessage message={error} onRetry={fetchBoards} />
+      ) : filteredBoards.length === 0 ? (
         <div className="text-center py-12">
           <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-lg font-medium text-foreground mb-2">
@@ -167,7 +152,11 @@ export default function BoardsPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          {boards.map((board) => (
+          {filteredBoards.map((board) => {
+            const topicLabel = TOPICS.find(topic => topic.id === board.topicId)?.name ?? board.topicId
+            const lastActivity = board.latestPostAt || board.createdAt
+
+            return (
             <Link
               key={board.id}
               to={`/boards/${board.id}`}
@@ -181,23 +170,19 @@ export default function BoardsPage() {
                     </h3>
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
                       <span className="bg-primary/10 text-primary px-2 py-1 rounded text-xs">
-                        {board.topicName}
+                        {topicLabel}
                       </span>
                       <span className="flex items-center gap-1">
                         <MessageSquare className="h-4 w-4" />
                         {board.postCount} 投稿
                       </span>
                       <span>
-                        {board.latestPostAt.toLocaleDateString()}
+                        {lastActivity ? lastActivity.toLocaleString() : '-'}
                       </span>
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    {board.isSolved ? (
-                      <span className="badge badge-success">
-                        {t('boards.badges.solved')}
-                      </span>
-                    ) : (
+                    {!board.latestPostAt && (
                       <span className="badge badge-warning">
                         {t('boards.badges.unanswered')}
                       </span>
@@ -206,7 +191,8 @@ export default function BoardsPage() {
                 </div>
               </div>
             </Link>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>
