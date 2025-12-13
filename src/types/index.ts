@@ -35,12 +35,15 @@ export interface Board {
   universityId: string
   topicId: string
   title: string
+  description?: string
+  boardType: 'qa' | 'event'
   createdAt: Date
   createdBy: string
   updatedAt: Date
   postCount: number
   latestPostAt?: Date | null
   yearCreated: number
+  bestAnswerPostId?: string | null
 }
 
 export interface Post {
@@ -52,7 +55,9 @@ export interface Post {
   imageUrls: string[]
   createdAt: Date
   updatedAt: Date
-  likeCount: number
+  thanksCount: number
+  likeCount?: number
+  isBestAnswer?: boolean
 }
 
 export interface Like {
