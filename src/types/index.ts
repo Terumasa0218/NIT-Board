@@ -2,6 +2,7 @@ export interface User {
   id: string
   email: string
   nickname: string
+  universityId: string
   avatarUrl?: string
   suspendedUntil?: Date
   followers: string[]
@@ -13,6 +14,7 @@ export interface User {
 
 export interface Department {
   id: string
+  universityId: string
   nameJa: string
   nameEn: string
   programType: 'advanced' | 'creative' | 'core'
@@ -20,6 +22,7 @@ export interface Department {
 
 export interface Topic {
   id: string
+  universityId: string
   departmentId: string
   nameJa: string
   nameEn: string
@@ -29,42 +32,52 @@ export interface Topic {
 
 export interface Board {
   id: string
+  universityId: string
   topicId: string
   title: string
   createdAt: Date
   createdBy: string
+  updatedAt: Date
   postCount: number
-  latestPostAt?: Date
+  latestPostAt?: Date | null
   yearCreated: number
 }
 
 export interface Post {
   id: string
+  universityId: string
   boardId: string
   authorId: string
   text: string
   imageUrls: string[]
   createdAt: Date
+  updatedAt: Date
   likeCount: number
 }
 
 export interface Like {
   postId: string
   userId: string
+  universityId: string
   createdAt: Date
 }
 
 export interface Follow {
   followerId: string
   followeeId: string
+  universityId: string
   createdAt: Date
 }
 
 export interface Chat {
   id: string
-  participantIds: [string, string]
-  latestMessageAt?: Date
+  participantIds: string[]
+  type: 'dm' | 'group'
+  createdBy: string
+  universityId: string
   createdAt: Date
+  updatedAt: Date
+  lastMessageAt: Date | null
 }
 
 export interface Message {
@@ -72,9 +85,10 @@ export interface Message {
   chatId: string
   authorId: string
   text: string
-  imageUrls: string[]
+  imageUrls?: string[]
   createdAt: Date
-  reportedBy: string[]
+  updatedAt: Date
+  reportedBy?: string[]
 }
 
 export interface Report {
@@ -85,10 +99,12 @@ export interface Report {
   reason: string
   createdAt: Date
   status: 'pending' | 'resolved' | 'dismissed'
+  universityId: string
 }
 
 export interface Event {
   id: string
+  universityId: string
   title: string
   body: string
   imageUrls: string[]
@@ -99,6 +115,7 @@ export interface Event {
 export interface Feedback {
   id: string
   authorId: string
+  universityId: string
   body: string
   createdAt: Date
   visibleTo: 'admin'
@@ -107,6 +124,7 @@ export interface Feedback {
 export interface Notification {
   id: string
   userId: string
+  universityId: string
   type: 'new_post' | 'new_follower' | 'new_like' | 'new_message'
   refIds: Record<string, string>
   isRead: boolean
@@ -116,6 +134,7 @@ export interface Notification {
 export interface Archive {
   id: string
   boardId: string
+  universityId: string
   folderName: string
   keywords: string[]
   year: number
@@ -134,7 +153,6 @@ export type Locale = 'ja' | 'en'
 export interface AuthState {
   user: User | null
   loading: boolean
-  isGuest: boolean
 }
 
 export interface AppState {
