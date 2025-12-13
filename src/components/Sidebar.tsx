@@ -8,7 +8,6 @@ import {
   Calendar,
   Settings,
   User,
-  Hash,
   Layers
 } from 'lucide-react'
 
@@ -26,11 +25,6 @@ export default function Sidebar() {
       to: '/departments',
       icon: MessageSquare,
       label: t('nav.boards'),
-    },
-    {
-      to: '/topics',
-      icon: Hash,
-      label: t('topics'),
     },
     {
       to: '/boards',

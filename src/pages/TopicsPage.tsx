@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useI18n } from '@/utils/i18n'
 import { Hash } from 'lucide-react'
 
@@ -12,26 +12,49 @@ const TOPICS = [
   { id: 'other', name: 'その他', description: 'その他の話題' },
 ]
 
+// 学科名のマッピング（簡略版）
+const DEPARTMENT_NAMES: Record<string, string> = {
+  'mechanical': '機械工学科',
+  'electrical': '電気・機械工学科',
+  'computer': '情報・メディア工学科',
+  'chemical': '物質工学科',
+  'civil': '社会工学科',
+  'architecture': '建築学科',
+  'creative': '創造工学教育課程',
+  'core': '基幹工学教育課程',
+}
+
 export default function TopicsPage() {
   const { t } = useI18n()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const departmentId = searchParams.get('department')
+  const departmentName = departmentId ? DEPARTMENT_NAMES[departmentId] || '選択された学科' : null
 
   const handleTopicClick = (topicId: string) => {
-    navigate(`/boards?topic=${topicId}`)
+    const params = new URLSearchParams()
+    if (departmentId) {
+      params.set('department', departmentId)
+    }
+    params.set('topic', topicId)
+    navigate(`/boards?${params.toString()}`)
   }
 
   return (
     <div className="max-w-4xl mx-auto p-6">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-foreground mb-2">
-          {t('topics')}
+          {departmentName ? `${departmentName} - ${t('topics')}` : t('topics')}
         </h1>
         <p className="text-muted-foreground">
-          トピックを選択して掲示板を閲覧してください
+          {departmentName 
+            ? `${departmentName}のトピックを選択して掲示板を閲覧してください`
+            : 'トピックを選択して掲示板を閲覧してください'
+          }
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 -mt-2">
         {TOPICS.map((topic) => (
           <button
             key={topic.id}

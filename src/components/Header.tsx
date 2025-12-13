@@ -1,11 +1,13 @@
 import { useAuthStore } from '@/stores/auth'
 import { useI18n } from '@/utils/i18n'
-import { Bell, Plus, User } from 'lucide-react'
+import { useTheme } from '@/hooks/useTheme'
+import { Moon, Sun, Plus, User } from 'lucide-react'
 import LanguageToggle from './LanguageToggle'
 
 export default function Header() {
   const { user, logout } = useAuthStore()
   const { t } = useI18n()
+  const { resolvedTheme, toggleTheme } = useTheme()
 
   const handleLogout = async () => {
     try {
@@ -33,8 +35,16 @@ export default function Header() {
               {t('boards.new')}
             </button>
             
-            <button className="btn btn-ghost btn-sm">
-              <Bell className="h-4 w-4" />
+            <button 
+              onClick={toggleTheme}
+              className="btn btn-ghost btn-sm"
+              title={resolvedTheme === 'dark' ? 'ライトモードに切り替え' : 'ダークモードに切り替え'}
+            >
+              {resolvedTheme === 'dark' ? (
+                <Sun className="h-4 w-4" />
+              ) : (
+                <Moon className="h-4 w-4" />
+              )}
             </button>
             
             <div className="flex items-center gap-2">

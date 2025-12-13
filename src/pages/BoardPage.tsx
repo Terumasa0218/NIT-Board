@@ -47,7 +47,8 @@ export default function BoardPage() {
       isSolved: false,
     }
 
-    setPosts([newPostObj, ...posts])
+    // 最新投稿を一番下に追加
+    setPosts([...posts, newPostObj])
     setNewPost('')
   }
 
@@ -116,7 +117,7 @@ export default function BoardPage() {
                         </span>
                       )}
                     </div>
-                    <p className="text-foreground">
+                    <p className="text-foreground whitespace-pre-wrap">
                       {post.content}
                     </p>
                   </div>
@@ -139,7 +140,7 @@ export default function BoardPage() {
                 id="newPost"
                 value={newPost}
                 onChange={(e) => setNewPost(e.target.value)}
-                className="textarea w-full"
+                className="textarea w-full bg-background text-foreground border-border"
                 placeholder="投稿内容を入力してください..."
                 rows={3}
               />
