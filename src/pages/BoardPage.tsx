@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { Crown, MessageSquare, RefreshCw, Send, ThumbsUp, User as UserIcon } from 'lucide-react'
+import { Calendar, Crown, MapPin, MessageSquare, RefreshCw, Send, ThumbsUp, User as UserIcon } from 'lucide-react'
 import { getBoard, setBestAnswer } from '@/repositories/boardsRepository'
 import { createPost, incrementThanks, listPostsByBoard } from '@/repositories/postsRepository'
 import { getTopicById } from '@/repositories/topicsRepository'
@@ -109,12 +109,7 @@ export default function BoardPage() {
 
   useEffect(() => {
     if (!boardId) return
-
-    const load = async () => {
-      await fetchBoard(boardId)
-    }
-
-    load()
+    fetchBoard(boardId)
   }, [boardId])
 
   useEffect(() => {
@@ -124,16 +119,17 @@ export default function BoardPage() {
   }, [board?.topicId])
 
   useEffect(() => {
-    if (!boardId) return
-    fetchPosts(boardId, board)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [boardId, board?.bestAnswerPostId])
+    if (boardId && board) {
+      fetchPosts(boardId, board)
+    }
+  }, [boardId, board])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (event: FormEvent) => {
+    event.preventDefault()
     if (!boardId || !authUserId || !newPostText.trim()) return
 
     setIsSubmitting(true)
+    setErrorPosts(null)
     try {
       const created = await createPost({ boardId, authorId: authUserId, text: newPostText.trim() })
       setNewPostText('')
@@ -156,9 +152,7 @@ export default function BoardPage() {
     })
     try {
       await incrementThanks(postId)
-      setPosts((prev) =>
-        prev.map((post) => (post.id === postId ? { ...post, thanksCount: post.thanksCount + 1 } : post)),
-      )
+      setPosts((prev) => prev.map((post) => (post.id === postId ? { ...post, thanksCount: post.thanksCount + 1 } : post)))
     } catch (error) {
       console.error(error)
       setErrorPosts('Failed to send thanks')
@@ -222,66 +216,55 @@ export default function BoardPage() {
           <span className="text-xs text-muted-foreground">{userId}</span>
         </div>
       </div>
-    </div>
-  )
+    )
+  }
 
-  const renderError = (message: string, retry: () => void) => (
-    <div className="max-w-4xl mx-auto p-6">
-      <div className="bg-destructive/10 text-destructive p-4 rounded flex items-center justify-between">
-        <span>{message}</span>
-        <button onClick={retry} className="btn btn-outline btn-sm">
-          <RefreshCw className="h-4 w-4 mr-1" /> 再読み込み
-        </button>
+  const formatEventTime = (start?: Date, end?: Date) => {
+    if (!start) return '日時未定'
+    if (end) {
+      return `${start.toLocaleString()} - ${end.toLocaleString()}`
+    }
+    return start.toLocaleString()
+  }
+
+  const renderEventDetails = (currentBoard: Board) => {
+    if (currentBoard.boardType !== 'event') return null
+
+    return (
+      <div className="bg-muted/40 border border-border rounded-lg p-4 space-y-3">
+        <div className="flex flex-wrap items-center gap-4 text-sm text-foreground">
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            <span>{formatEventTime(currentBoard.eventStartAt, currentBoard.eventEndAt)}</span>
+          </div>
+          {currentBoard.location && (
+            <div className="flex items-center gap-2">
+              <MapPin className="h-4 w-4" />
+              <span>{currentBoard.location}</span>
+            </div>
+          )}
+          {currentBoard.organizerName && (
+            <div className="flex items-center gap-2">
+              <UserIcon className="h-4 w-4" />
+              <span>
+                {currentBoard.organizerName}
+                {currentBoard.organizerType ? ` (${currentBoard.organizerType})` : ''}
+              </span>
+            </div>
+          )}
+        </div>
+        {currentBoard.registrationUrl && (
+          <a
+            href={currentBoard.registrationUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-2 text-primary hover:underline text-sm"
+          >
+            参加登録・詳細を見る
+          </a>
+        )}
       </div>
-    </div>
-  )
-
-  if (!boardId) {
-    return <div className="max-w-4xl mx-auto p-6 text-foreground">Board ID is missing.</div>
-  }
-
-  if (loadingBoard) {
-    return renderLoading()
-  }
-
-  if (errorBoard) {
-    return renderError(errorBoard, () => fetchBoard(boardId))
-  }
-
-  if (!board) {
-    return <div className="max-w-4xl mx-auto p-6 text-foreground">Board not found.</div>
-  }
-
-  if (!boardId) {
-    return <div className="max-w-4xl mx-auto p-6 text-foreground">Board ID is missing.</div>
-  }
-
-  if (loadingBoard) {
-    return renderLoading()
-  }
-
-  if (errorBoard) {
-    return renderError(errorBoard, () => fetchBoard(boardId))
-  }
-
-  if (!board) {
-    return <div className="max-w-4xl mx-auto p-6 text-foreground">Board not found.</div>
-  }
-
-  if (!boardId) {
-    return <div className="max-w-4xl mx-auto p-6 text-foreground">Board ID is missing.</div>
-  }
-
-  if (loadingBoard) {
-    return renderLoading()
-  }
-
-  if (errorBoard) {
-    return renderError(errorBoard, () => fetchBoard(boardId))
-  }
-
-  if (!board) {
-    return <div className="max-w-4xl mx-auto p-6 text-foreground">Board not found.</div>
+    )
   }
 
   if (!boardId) {
@@ -302,7 +285,7 @@ export default function BoardPage() {
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
-      <div className="bg-card text-card-foreground rounded-lg p-6 shadow-sm border border-border">
+      <div className="bg-card text-card-foreground rounded-lg p-6 shadow-sm border border-border space-y-4">
         <div className="flex items-start justify-between">
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -325,6 +308,8 @@ export default function BoardPage() {
             </div>
           </div>
         </div>
+
+        {renderEventDetails(board)}
       </div>
 
       {loadingPosts && renderLoading()}

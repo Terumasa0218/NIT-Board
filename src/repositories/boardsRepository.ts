@@ -20,11 +20,24 @@ import { DEFAULT_UNIVERSITY_ID } from '@/constants/university'
 
 const boardsCollection = collection(db, 'boards')
 
+const toDate = (value: unknown): Date | undefined => {
+  if (value instanceof Timestamp) return value.toDate()
+  if (value instanceof Date) return value
+  if (typeof value === 'string' || typeof value === 'number') {
+    const parsed = new Date(value)
+    if (!Number.isNaN(parsed.getTime())) return parsed
+  }
+  return undefined
+}
+
 const toBoard = (snapshot: QueryDocumentSnapshot<DocumentData> | DocumentSnapshot<DocumentData>): Board => {
   const data = snapshot.data()
   if (!data) {
     throw new Error('Board data is missing')
   }
+
+  const eventStartAt = toDate(data.eventStartAt)
+  const eventEndAt = toDate(data.eventEndAt)
 
   return {
     id: snapshot.id,
@@ -33,26 +46,62 @@ const toBoard = (snapshot: QueryDocumentSnapshot<DocumentData> | DocumentSnapsho
     title: data.title,
     description: data.description,
     boardType: data.boardType || 'qa',
-    createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : new Date(),
-    updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate() : new Date(),
+    eventStartAt,
+    eventEndAt,
+    location: data.location ?? undefined,
+    organizerName: data.organizerName ?? undefined,
+    organizerType: data.organizerType ?? undefined,
+    registrationUrl: data.registrationUrl ?? undefined,
+    createdAt: toDate(data.createdAt) ?? new Date(),
+    updatedAt: toDate(data.updatedAt) ?? new Date(),
     createdBy: data.createdBy,
     postCount: data.postCount ?? 0,
-    latestPostAt: data.latestPostAt instanceof Timestamp ? data.latestPostAt.toDate() : data.latestPostAt ?? null,
+    latestPostAt: data.latestPostAt === null ? null : toDate(data.latestPostAt) ?? null,
     yearCreated: data.yearCreated ?? new Date().getFullYear(),
     bestAnswerPostId: data.bestAnswerPostId ?? null,
   }
 }
 
-export const listBoardsByTopic = async (topicId: string): Promise<Board[]> => {
-  const boardsQuery = query(
-    boardsCollection,
-    where('topicId', '==', topicId),
-    where('universityId', '==', DEFAULT_UNIVERSITY_ID),
-    orderBy('createdAt', 'desc'),
-  )
+type ListBoardsOptions = {
+  universityId: string
+  topicId?: string
+  boardType?: Board['boardType']
+  orderByField?: 'createdAt' | 'updatedAt' | 'eventStartAt'
+  orderDirection?: 'asc' | 'desc'
+}
+
+export const listBoards = async (options: ListBoardsOptions): Promise<Board[]> => {
+  const { universityId, topicId, boardType, orderByField = 'createdAt', orderDirection = 'desc' } = options
+
+  const constraints = [where('universityId', '==', universityId)]
+
+  if (topicId) {
+    constraints.push(where('topicId', '==', topicId))
+  }
+
+  if (boardType) {
+    constraints.push(where('boardType', '==', boardType))
+  }
+
+  constraints.push(orderBy(orderByField, orderDirection))
+
+  const boardsQuery = query(boardsCollection, ...constraints)
 
   const snapshot = await getDocs(boardsQuery)
   return snapshot.docs.map((docSnapshot) => toBoard(docSnapshot))
+}
+
+export const listBoardsByTopic = async (topicId: string, universityId = DEFAULT_UNIVERSITY_ID): Promise<Board[]> => {
+  return listBoards({ topicId, universityId, orderByField: 'createdAt', orderDirection: 'desc' })
+}
+
+export const listEventBoards = async (universityId: string): Promise<Board[]> => {
+  return listBoards({
+    universityId,
+    boardType: 'event',
+    orderByField: 'eventStartAt',
+    orderDirection: 'asc',
+  })
 }
 
 export const getBoard = async (boardId: string): Promise<Board | null> => {
@@ -71,6 +120,12 @@ export const createBoard = async (input: {
   universityId: string
   description?: string
   boardType?: 'qa' | 'event'
+  eventStartAt?: Date
+  eventEndAt?: Date
+  location?: string
+  organizerName?: string
+  organizerType?: 'circle' | 'student_group' | 'company' | 'other'
+  registrationUrl?: string
 }): Promise<Board> => {
   const now = serverTimestamp()
   const docRef = await addDoc(boardsCollection, {
@@ -80,6 +135,12 @@ export const createBoard = async (input: {
     universityId: input.universityId || DEFAULT_UNIVERSITY_ID,
     description: input.description ?? '',
     boardType: input.boardType ?? 'qa',
+    eventStartAt: input.eventStartAt ? Timestamp.fromDate(input.eventStartAt) : null,
+    eventEndAt: input.eventEndAt ? Timestamp.fromDate(input.eventEndAt) : null,
+    location: input.location ?? null,
+    organizerName: input.organizerName ?? null,
+    organizerType: input.organizerType ?? null,
+    registrationUrl: input.registrationUrl ?? null,
     postCount: 0,
     latestPostAt: null,
     yearCreated: new Date().getFullYear(),

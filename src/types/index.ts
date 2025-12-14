@@ -41,6 +41,12 @@ export interface Board {
   title: string
   description?: string
   boardType: 'qa' | 'event'
+  eventStartAt?: Date
+  eventEndAt?: Date
+  location?: string
+  organizerName?: string
+  organizerType?: 'circle' | 'student_group' | 'company' | 'other'
+  registrationUrl?: string
   createdAt: Date
   createdBy: string
   updatedAt: Date
