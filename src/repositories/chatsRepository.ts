@@ -31,11 +31,14 @@ const toChat = (snapshot: QueryDocumentSnapshot<DocumentData> | DocumentSnapshot
   }
 
   const participantIds: string[] = Array.isArray(data.participantIds) ? (data.participantIds as string[]) : []
+  const participantIdsTuple: [string, string] = participantIds.length >= 2 
+    ? [participantIds[0], participantIds[1]] 
+    : ['', '']
 
   return {
     id: snapshot.id,
     type: (data.type ?? 'dm') as ChatType,
-    participantIds,
+    participantIds: participantIdsTuple,
     createdBy: data.createdBy,
     universityId: data.universityId || DEFAULT_UNIVERSITY_ID,
     createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : new Date(),

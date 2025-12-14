@@ -13,6 +13,7 @@ import {
   where,
   type DocumentData,
   type DocumentSnapshot,
+  type QueryConstraint,
   type QueryDocumentSnapshot,
 } from 'firebase/firestore'
 import { db } from '@/firebase'
@@ -40,7 +41,7 @@ const toMessage = (snapshot: QueryDocumentSnapshot<DocumentData> | DocumentSnaps
 }
 
 export const listMessages = async (params: { chatId: string; limit?: number }): Promise<Message[]> => {
-  const constraints = [where('chatId', '==', params.chatId), orderBy('createdAt', 'asc')] as const
+  const constraints: QueryConstraint[] = [where('chatId', '==', params.chatId), orderBy('createdAt', 'asc')]
   const messagesQuery = params.limit
     ? query(messagesCollection, ...constraints, limitQuery(params.limit))
     : query(messagesCollection, ...constraints)

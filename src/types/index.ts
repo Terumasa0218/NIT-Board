@@ -2,15 +2,15 @@ export interface User {
   id: string
   email: string
   nickname: string
-  universityId: string
+  universityId?: string
   avatarUrl?: string
   suspendedUntil?: Date
   department?: string
   grade?: string
   circles?: string[]
   bio?: string
-  followers?: string[]
-  following?: string[]
+  followers: string[]
+  following: string[]
   preferredLocale: 'ja' | 'en'
   createdAt: Date
   updatedAt: Date
@@ -26,7 +26,7 @@ export interface Department {
 
 export interface Topic {
   id: string
-  universityId: string
+  universityId?: string
   departmentId: string
   nameJa: string
   nameEn: string
@@ -40,7 +40,7 @@ export interface Board {
   topicId: string
   title: string
   description?: string
-  boardType: 'qa' | 'event'
+  boardType?: 'qa' | 'event'
   eventStartAt?: Date
   eventEndAt?: Date
   location?: string
@@ -48,25 +48,25 @@ export interface Board {
   organizerType?: 'circle' | 'student_group' | 'company' | 'other'
   registrationUrl?: string
   createdAt: Date
-  createdBy: string
   updatedAt: Date
+  createdBy: string
   postCount: number
-  latestPostAt?: Date | null
+  latestPostAt?: Date | null | null
   yearCreated: number
   bestAnswerPostId?: string | null
 }
 
 export interface Post {
   id: string
-  universityId: string
+  universityId?: string
   boardId: string
   authorId: string
   text: string
   imageUrls: string[]
   createdAt: Date
-  updatedAt: Date
-  thanksCount: number
-  likeCount?: number
+  updatedAt?: Date
+  thanksCount?: number
+  likeCount: number
   isBestAnswer?: boolean
 }
 
@@ -84,16 +84,16 @@ export interface Follow {
   createdAt: Date
 }
 
-export type ChatType = 'dm' | 'group'
+export type ChatType = 'dm'
 
 export interface Chat {
   id: string
-  participantIds: string[]
-  type: ChatType
-  createdBy: string
-  universityId: string
+  type?: ChatType
+  participantIds: [string, string] | string[]
+  createdBy?: string
+  universityId?: string
   createdAt: Date
-  updatedAt: Date
+  updatedAt?: Date
   lastMessageAt?: Date | null
   lastMessageText?: string
 }
@@ -105,8 +105,8 @@ export interface Message {
   text: string
   imageUrls?: string[]
   createdAt: Date
-  updatedAt: Date
-  reportedBy?: string[]
+  updatedAt?: Date
+  reportedBy: string[]
 }
 
 export interface Report {

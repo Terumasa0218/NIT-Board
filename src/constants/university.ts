@@ -1,1 +1,2 @@
-export const DEFAULT_UNIVERSITY_ID = 'nitech'
+export const DEFAULT_UNIVERSITY_ID = 'nit'
+

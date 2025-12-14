@@ -136,7 +136,7 @@ export default function EventsPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                      <span className="px-2 py-1 bg-primary/10 text-primary rounded-full text-xs">{selectedEvent.boardType.toUpperCase()}</span>
+                      <span className="px-2 py-1 bg-primary/10 text-primary rounded-full text-xs">{(selectedEvent.boardType ?? 'event').toUpperCase()}</span>
                       <span className="px-2 py-1 bg-muted rounded-full text-xs">イベント</span>
                     </div>
                     <h2 className="text-xl font-bold text-foreground">{selectedEvent.title}</h2>

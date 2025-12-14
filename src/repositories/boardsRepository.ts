@@ -12,6 +12,7 @@ import {
   where,
   type DocumentData,
   type DocumentSnapshot,
+  type QueryConstraint,
   type QueryDocumentSnapshot,
 } from 'firebase/firestore'
 import { db } from '@/firebase'
@@ -73,7 +74,7 @@ type ListBoardsOptions = {
 export const listBoards = async (options: ListBoardsOptions): Promise<Board[]> => {
   const { universityId, topicId, boardType, orderByField = 'createdAt', orderDirection = 'desc' } = options
 
-  const constraints = [where('universityId', '==', universityId)]
+  const constraints: QueryConstraint[] = [where('universityId', '==', universityId)]
 
   if (topicId) {
     constraints.push(where('topicId', '==', topicId))
