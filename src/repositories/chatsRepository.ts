@@ -1,11 +1,11 @@
 import {
-  addDoc,
   collection,
   doc,
   getDoc,
   getDocs,
   orderBy,
   query,
+  runTransaction,
   serverTimestamp,
   Timestamp,
   where,
@@ -18,6 +18,11 @@ import type { Chat, ChatType } from '@/types'
 import { DEFAULT_UNIVERSITY_ID } from '@/constants/university'
 
 const chatsCollection = collection(db, 'chats')
+
+const buildDmChatId = (universityId: string, userId: string, otherUserId: string): string => {
+  const sorted = [userId, otherUserId].sort()
+  return `dm_${universityId}_${sorted[0]}_${sorted[1]}`
+}
 
 const toChat = (snapshot: QueryDocumentSnapshot<DocumentData> | DocumentSnapshot<DocumentData>): Chat => {
   const data = snapshot.data()
@@ -39,6 +44,7 @@ const toChat = (snapshot: QueryDocumentSnapshot<DocumentData> | DocumentSnapshot
       data.lastMessageAt instanceof Timestamp
         ? data.lastMessageAt.toDate()
         : data.lastMessageAt ?? null,
+    lastMessageText: data.lastMessageText,
   }
 }
 
@@ -49,26 +55,55 @@ export const getChat = async (chatId: string): Promise<Chat | null> => {
   return toChat(snapshot)
 }
 
-export const listChatsByUser = async (userId: string): Promise<Chat[]> => {
-  const chatsQuery = query(chatsCollection, where('participantIds', 'array-contains', userId), orderBy('updatedAt', 'desc'))
+export const listDmChatsForUser = async (params: { universityId: string; userId: string }): Promise<Chat[]> => {
+  const chatsQuery = query(
+    chatsCollection,
+    where('universityId', '==', params.universityId),
+    where('participantIds', 'array-contains', params.userId),
+    where('type', '==', 'dm'),
+    orderBy('updatedAt', 'desc'),
+  )
   const snapshot = await getDocs(chatsQuery)
   return snapshot.docs.map((docSnapshot) => toChat(docSnapshot))
 }
 
-export const createDmChat = async (currentUserId: string, targetUserId: string): Promise<Chat> => {
-  const participantIds = Array.from(new Set([currentUserId, targetUserId]))
-  const now = serverTimestamp()
+export const getOrCreateDmChat = async (params: {
+  universityId: string
+  userId: string
+  otherUserId: string
+}): Promise<Chat> => {
+  const chatId = buildDmChatId(params.universityId, params.userId, params.otherUserId)
+  const chatRef = doc(chatsCollection, chatId)
 
-  const docRef = await addDoc(chatsCollection, {
-    type: 'dm',
-    participantIds,
-    createdBy: currentUserId,
-    universityId: DEFAULT_UNIVERSITY_ID,
-    createdAt: now,
-    updatedAt: now,
-    lastMessageAt: now,
+  await runTransaction(db, async (transaction) => {
+    const existing = await transaction.get(chatRef)
+    if (existing.exists()) return
+
+    const now = serverTimestamp()
+    transaction.set(chatRef, {
+      id: chatId,
+      type: 'dm',
+      participantIds: [params.userId, params.otherUserId],
+      createdBy: params.userId,
+      universityId: params.universityId,
+      createdAt: now,
+      updatedAt: now,
+      lastMessageAt: null,
+      lastMessageText: '',
+    })
   })
 
-  const createdSnapshot = await getDoc(docRef)
-  return toChat(createdSnapshot)
+  const snapshot = await getDoc(chatRef)
+  if (!snapshot.exists()) {
+    throw new Error('Failed to create or retrieve chat')
+  }
+  return toChat(snapshot)
+}
+
+export const listChatsByUser = async (userId: string): Promise<Chat[]> => {
+  return listDmChatsForUser({ universityId: DEFAULT_UNIVERSITY_ID, userId })
+}
+
+export const createDmChat = async (currentUserId: string, targetUserId: string): Promise<Chat> => {
+  return getOrCreateDmChat({ universityId: DEFAULT_UNIVERSITY_ID, userId: currentUserId, otherUserId: targetUserId })
 }

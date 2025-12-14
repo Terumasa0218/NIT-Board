@@ -4,6 +4,7 @@ import {
   doc,
   getDoc,
   getDocs,
+  limit as limitQuery,
   orderBy,
   query,
   serverTimestamp,
@@ -38,8 +39,11 @@ const toMessage = (snapshot: QueryDocumentSnapshot<DocumentData> | DocumentSnaps
   }
 }
 
-export const listMessagesByChat = async (chatId: string): Promise<Message[]> => {
-  const messagesQuery = query(messagesCollection, where('chatId', '==', chatId), orderBy('createdAt', 'asc'))
+export const listMessages = async (params: { chatId: string; limit?: number }): Promise<Message[]> => {
+  const constraints = [where('chatId', '==', params.chatId), orderBy('createdAt', 'asc')] as const
+  const messagesQuery = params.limit
+    ? query(messagesCollection, ...constraints, limitQuery(params.limit))
+    : query(messagesCollection, ...constraints)
   const snapshot = await getDocs(messagesQuery)
   return snapshot.docs.map((docSnapshot) => toMessage(docSnapshot))
 }
@@ -60,6 +64,7 @@ export const sendMessage = async (input: { chatId: string; authorId: string; tex
   await updateDoc(chatRef, {
     updatedAt: now,
     lastMessageAt: now,
+    lastMessageText: input.text,
   })
 
   const snapshot = await getDoc(docRef)

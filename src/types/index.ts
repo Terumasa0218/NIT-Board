@@ -89,6 +89,7 @@ export interface Chat {
   createdAt: Date
   updatedAt: Date
   lastMessageAt?: Date | null
+  lastMessageText?: string
 }
 
 export interface Message {

@@ -1,13 +1,16 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
-import { useParams } from 'react-router-dom'
-import { BookOpen, Crown, Edit2, Loader2, ThumbsUp, User as UserIcon, Users } from 'lucide-react'
+import { useNavigate, useParams } from 'react-router-dom'
+import { BookOpen, Crown, Edit2, Loader2, MessageCircle, ThumbsUp, User as UserIcon, Users } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth'
 import { getUserById, followUser, unfollowUser } from '@/repositories/usersRepository'
 import { listPostsByAuthor } from '@/repositories/postsRepository'
 import { getBoard } from '@/repositories/boardsRepository'
+import { getOrCreateDmChat } from '@/repositories/chatsRepository'
 import type { Board, User } from '@/types'
 import toast from 'react-hot-toast'
+import { useAppStore } from '@/stores/appStore'
+import { isMutualFollow } from '@/utils/follow'
 
 interface UserStats {
   answers: number
@@ -17,6 +20,8 @@ interface UserStats {
 
 export default function ProfilePage() {
   const { userId } = useParams<{ userId?: string }>()
+  const navigate = useNavigate()
+  const { selectedUniversityId } = useAppStore()
   const { user, userProfile, fetchUserProfile, updateProfile } = useAuthStore()
 
   const [profile, setProfile] = useState<User | null>(null)
@@ -47,6 +52,10 @@ export default function ProfilePage() {
   const isFollowing = useMemo(() => {
     if (!profile || !userProfile) return false
     return (userProfile.following ?? []).includes(profile.id)
+  }, [profile, userProfile])
+
+  const isMutual = useMemo(() => {
+    return isMutualFollow(userProfile, profile)
   }, [profile, userProfile])
 
   const loadProfile = async () => {
@@ -141,6 +150,21 @@ export default function ProfilePage() {
     }
   }
 
+  const handleStartDm = async () => {
+    if (!profile || !user) return
+    try {
+      const chat = await getOrCreateDmChat({
+        universityId: selectedUniversityId,
+        userId: user.id,
+        otherUserId: profile.id,
+      })
+      navigate(`/messages/${chat.id}`)
+    } catch (error) {
+      console.error(error)
+      toast.error('メッセージの開始に失敗しました')
+    }
+  }
+
   if (!targetUserId) {
     return (
       <div className="max-w-3xl mx-auto p-6 text-foreground">
@@ -181,13 +205,20 @@ export default function ProfilePage() {
           </div>
         </div>
         {!isOwnProfile && profile && (
-          <button
-            onClick={handleFollowToggle}
-            disabled={followLoading}
-            className={`btn ${isFollowing ? 'btn-outline' : 'btn-primary'} min-w-[140px]`}
-          >
-            {followLoading ? '処理中...' : isFollowing ? 'フォロー中' : 'フォローする'}
-          </button>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <button
+              onClick={handleFollowToggle}
+              disabled={followLoading}
+              className={`btn ${isFollowing ? 'btn-outline' : 'btn-primary'} min-w-[140px]`}
+            >
+              {followLoading ? '処理中...' : isFollowing ? 'フォロー中' : 'フォローする'}
+            </button>
+            {isMutual && (
+              <button className="btn btn-secondary min-w-[140px]" onClick={handleStartDm}>
+                <MessageCircle className="h-4 w-4 mr-1" /> メッセージを送る
+              </button>
+            )}
+          </div>
         )}
       </div>
 
@@ -272,11 +303,7 @@ export default function ProfilePage() {
             </div>
           </div>
           <div className="flex justify-end">
-            <button
-              type="submit"
-              className="btn btn-primary flex items-center gap-2"
-              disabled={saving}
-            >
+            <button type="submit" className="btn btn-primary flex items-center gap-2" disabled={saving}>
               {saving && <Loader2 className="h-4 w-4 animate-spin" />} 保存
             </button>
           </div>
