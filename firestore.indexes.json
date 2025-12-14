@@ -46,6 +46,16 @@
   //     ]
   //   },
   // ]
-  "indexes": [],
+  "indexes": [
+    {
+      "collectionGroup": "boards",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "boardType", "mode": "ASCENDING" },
+        { "fieldPath": "universityId", "mode": "ASCENDING" },
+        { "fieldPath": "eventStartAt", "mode": "ASCENDING" }
+      ]
+    }
+  ],
   "fieldOverrides": []
 }

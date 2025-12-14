@@ -10,8 +10,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  
-  const { login, setGuestMode } = useAuthStore()
+
+  const { login } = useAuthStore()
   const { t } = useI18n()
   const navigate = useNavigate()
   const location = useLocation()
@@ -39,7 +39,7 @@ export default function LoginPage() {
     try {
       await login(email.trim(), password)
       toast.success('ログインしました')
-      navigate('/')
+      navigate(from, { replace: true })
     } catch (error: any) {
       console.error('Login error:', error)
       
@@ -66,11 +66,6 @@ export default function LoginPage() {
     } finally {
       setIsLoading(false)
     }
-  }
-
-  const handleGuestMode = () => {
-    setGuestMode(true)
-    navigate(from, { replace: true })
   }
 
   return (
@@ -145,22 +140,6 @@ export default function LoginPage() {
           </form>
           
           <div className="card-footer flex flex-col gap-4">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-border" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">または</span>
-              </div>
-            </div>
-            
-            <button
-              onClick={handleGuestMode}
-              className="btn btn-outline w-full"
-            >
-              {t('auth.continueAsGuest')}
-            </button>
-            
             <p className="text-center text-sm text-muted-foreground">
               {t('auth.dontHaveAccount')}{' '}
               <Link to="/register" className="text-primary hover:underline">
