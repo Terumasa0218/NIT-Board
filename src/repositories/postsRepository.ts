@@ -38,7 +38,7 @@ const toPost = (snapshot: QueryDocumentSnapshot<DocumentData> | DocumentSnapshot
     createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : new Date(),
     updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate() : new Date(),
     thanksCount: data.thanksCount ?? data.likeCount ?? 0,
-    likeCount: data.likeCount,
+    likeCount: data.likeCount ?? 0,
     isBestAnswer: data.isBestAnswer ?? false,
   }
 }

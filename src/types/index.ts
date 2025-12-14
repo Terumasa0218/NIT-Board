@@ -40,7 +40,7 @@ export interface Board {
   topicId: string
   title: string
   description?: string
-  boardType?: 'qa' | 'event'
+  boardType: 'qa' | 'event'
   eventStartAt?: Date
   eventEndAt?: Date
   location?: string
@@ -51,7 +51,7 @@ export interface Board {
   updatedAt: Date
   createdBy: string
   postCount: number
-  latestPostAt?: Date | null | null
+  latestPostAt: Date | null
   yearCreated: number
   bestAnswerPostId?: string | null
 }
@@ -64,8 +64,8 @@ export interface Post {
   text: string
   imageUrls: string[]
   createdAt: Date
-  updatedAt?: Date
-  thanksCount?: number
+  updatedAt: Date
+  thanksCount: number
   likeCount: number
   isBestAnswer?: boolean
 }

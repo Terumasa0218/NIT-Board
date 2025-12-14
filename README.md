@@ -60,10 +60,20 @@ A student-only knowledge-sharing bulletin board for Nagoya Institute of Technolo
    ```
 
 3. **Environment Setup**
-   
+
    The Firebase configuration is already set up in `src/firebase.ts` with the production project:
    - Project ID: `nitboard-57de2`
    - Hosting URL: `https://nitboard-57de2.web.app/`
+
+   Create a local environment file for development by copying `.env.example` to `.env.local` and filling in the required `VITE_*` values. The `.env.local` file is ignored by Git and should not be committed.
+
+   GitHub Actions builds require the same `VITE_*` variables to be registered as repository Secrets with the exact names below:
+   - `VITE_FIREBASE_API_KEY`
+   - `VITE_FIREBASE_AUTH_DOMAIN`
+   - `VITE_FIREBASE_PROJECT_ID`
+   - `VITE_FIREBASE_STORAGE_BUCKET`
+   - `VITE_FIREBASE_MESSAGING_SENDER_ID`
+   - `VITE_FIREBASE_APP_ID`
 
 4. **Development Server**
    ```bash
