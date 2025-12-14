@@ -2,8 +2,13 @@ export interface User {
   id: string
   email: string
   nickname: string
+  universityId?: string
   avatarUrl?: string
   suspendedUntil?: Date
+  department?: string
+  grade?: string
+  circles?: string[]
+  bio?: string
   followers: string[]
   following: string[]
   preferredLocale: 'ja' | 'en'
@@ -20,6 +25,7 @@ export interface Department {
 
 export interface Topic {
   id: string
+  universityId?: string
   departmentId: string
   nameJa: string
   nameEn: string
@@ -29,23 +35,38 @@ export interface Topic {
 
 export interface Board {
   id: string
+  universityId: string
   topicId: string
   title: string
+  description?: string
+  boardType?: 'qa' | 'event'
+  eventStartAt?: Date
+  eventEndAt?: Date
+  location?: string
+  organizerName?: string
+  organizerType?: 'circle' | 'student_group' | 'company' | 'other'
+  registrationUrl?: string
   createdAt: Date
+  updatedAt: Date
   createdBy: string
   postCount: number
-  latestPostAt?: Date
+  latestPostAt?: Date | null | null
   yearCreated: number
+  bestAnswerPostId?: string | null
 }
 
 export interface Post {
   id: string
+  universityId?: string
   boardId: string
   authorId: string
   text: string
   imageUrls: string[]
   createdAt: Date
+  updatedAt?: Date
+  thanksCount?: number
   likeCount: number
+  isBestAnswer?: boolean
 }
 
 export interface Like {
@@ -60,11 +81,18 @@ export interface Follow {
   createdAt: Date
 }
 
+export type ChatType = 'dm'
+
 export interface Chat {
   id: string
-  participantIds: [string, string]
-  latestMessageAt?: Date
+  type?: ChatType
+  participantIds: [string, string] | string[]
+  createdBy?: string
+  universityId?: string
   createdAt: Date
+  updatedAt?: Date
+  lastMessageAt?: Date | null
+  lastMessageText?: string
 }
 
 export interface Message {
@@ -74,6 +102,7 @@ export interface Message {
   text: string
   imageUrls: string[]
   createdAt: Date
+  updatedAt?: Date
   reportedBy: string[]
 }
 
