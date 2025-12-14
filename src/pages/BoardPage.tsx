@@ -222,7 +222,66 @@ export default function BoardPage() {
           <span className="text-xs text-muted-foreground">{userId}</span>
         </div>
       </div>
-    )
+    </div>
+  )
+
+  const renderError = (message: string, retry: () => void) => (
+    <div className="max-w-4xl mx-auto p-6">
+      <div className="bg-destructive/10 text-destructive p-4 rounded flex items-center justify-between">
+        <span>{message}</span>
+        <button onClick={retry} className="btn btn-outline btn-sm">
+          <RefreshCw className="h-4 w-4 mr-1" /> 再読み込み
+        </button>
+      </div>
+    </div>
+  )
+
+  if (!boardId) {
+    return <div className="max-w-4xl mx-auto p-6 text-foreground">Board ID is missing.</div>
+  }
+
+  if (loadingBoard) {
+    return renderLoading()
+  }
+
+  if (errorBoard) {
+    return renderError(errorBoard, () => fetchBoard(boardId))
+  }
+
+  if (!board) {
+    return <div className="max-w-4xl mx-auto p-6 text-foreground">Board not found.</div>
+  }
+
+  if (!boardId) {
+    return <div className="max-w-4xl mx-auto p-6 text-foreground">Board ID is missing.</div>
+  }
+
+  if (loadingBoard) {
+    return renderLoading()
+  }
+
+  if (errorBoard) {
+    return renderError(errorBoard, () => fetchBoard(boardId))
+  }
+
+  if (!board) {
+    return <div className="max-w-4xl mx-auto p-6 text-foreground">Board not found.</div>
+  }
+
+  if (!boardId) {
+    return <div className="max-w-4xl mx-auto p-6 text-foreground">Board ID is missing.</div>
+  }
+
+  if (loadingBoard) {
+    return renderLoading()
+  }
+
+  if (errorBoard) {
+    return renderError(errorBoard, () => fetchBoard(boardId))
+  }
+
+  if (!board) {
+    return <div className="max-w-4xl mx-auto p-6 text-foreground">Board not found.</div>
   }
 
   if (!boardId) {
