@@ -103,7 +103,15 @@ function App() {
             element={needsProfileSetup ? <Navigate to="/profile-setup" replace /> : <MessagesPage />}
           />
           <Route
+            path="messages/:chatId"
+            element={needsProfileSetup ? <Navigate to="/profile-setup" replace /> : <MessagesPage />}
+          />
+          <Route
             path="profile"
+            element={needsProfileSetup ? <Navigate to="/profile-setup" replace /> : <ProfilePage />}
+          />
+          <Route
+            path="users/:userId"
             element={needsProfileSetup ? <Navigate to="/profile-setup" replace /> : <ProfilePage />}
           />
           <Route

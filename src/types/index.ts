@@ -5,8 +5,12 @@ export interface User {
   universityId: string
   avatarUrl?: string
   suspendedUntil?: Date
-  followers: string[]
-  following: string[]
+  department?: string
+  grade?: string
+  circles?: string[]
+  bio?: string
+  followers?: string[]
+  following?: string[]
   preferredLocale: 'ja' | 'en'
   createdAt: Date
   updatedAt: Date
@@ -35,12 +39,15 @@ export interface Board {
   universityId: string
   topicId: string
   title: string
+  description?: string
+  boardType: 'qa' | 'event'
   createdAt: Date
   createdBy: string
   updatedAt: Date
   postCount: number
   latestPostAt?: Date | null
   yearCreated: number
+  bestAnswerPostId?: string | null
 }
 
 export interface Post {
@@ -52,7 +59,9 @@ export interface Post {
   imageUrls: string[]
   createdAt: Date
   updatedAt: Date
-  likeCount: number
+  thanksCount: number
+  likeCount?: number
+  isBestAnswer?: boolean
 }
 
 export interface Like {
@@ -69,15 +78,18 @@ export interface Follow {
   createdAt: Date
 }
 
+export type ChatType = 'dm' | 'group'
+
 export interface Chat {
   id: string
   participantIds: string[]
-  type: 'dm' | 'group'
+  type: ChatType
   createdBy: string
   universityId: string
   createdAt: Date
   updatedAt: Date
-  lastMessageAt: Date | null
+  lastMessageAt?: Date | null
+  lastMessageText?: string
 }
 
 export interface Message {
@@ -152,6 +164,7 @@ export type Locale = 'ja' | 'en'
 
 export interface AuthState {
   user: User | null
+  userProfile: User | null
   loading: boolean
 }
 

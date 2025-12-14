@@ -8,6 +8,7 @@ import {
   query,
   serverTimestamp,
   Timestamp,
+  updateDoc,
   where,
   type DocumentData,
   type DocumentSnapshot,
@@ -21,18 +22,24 @@ const boardsCollection = collection(db, 'boards')
 
 const toBoard = (snapshot: QueryDocumentSnapshot<DocumentData> | DocumentSnapshot<DocumentData>): Board => {
   const data = snapshot.data()
+  if (!data) {
+    throw new Error('Board data is missing')
+  }
 
   return {
     id: snapshot.id,
     universityId: data.universityId || DEFAULT_UNIVERSITY_ID,
     topicId: data.topicId,
     title: data.title,
+    description: data.description,
+    boardType: data.boardType || 'qa',
     createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : new Date(),
     updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate() : new Date(),
     createdBy: data.createdBy,
     postCount: data.postCount ?? 0,
     latestPostAt: data.latestPostAt instanceof Timestamp ? data.latestPostAt.toDate() : data.latestPostAt ?? null,
     yearCreated: data.yearCreated ?? new Date().getFullYear(),
+    bestAnswerPostId: data.bestAnswerPostId ?? null,
   }
 }
 
@@ -62,6 +69,8 @@ export const createBoard = async (input: {
   topicId: string
   createdBy: string
   universityId: string
+  description?: string
+  boardType?: 'qa' | 'event'
 }): Promise<Board> => {
   const now = serverTimestamp()
   const docRef = await addDoc(boardsCollection, {
@@ -69,13 +78,24 @@ export const createBoard = async (input: {
     topicId: input.topicId,
     createdBy: input.createdBy,
     universityId: input.universityId || DEFAULT_UNIVERSITY_ID,
+    description: input.description ?? '',
+    boardType: input.boardType ?? 'qa',
     postCount: 0,
     latestPostAt: null,
     yearCreated: new Date().getFullYear(),
     createdAt: now,
     updatedAt: now,
+    bestAnswerPostId: null,
   })
 
   const createdSnapshot = await getDoc(docRef)
   return toBoard(createdSnapshot)
+}
+
+export const setBestAnswer = async (boardId: string, postId: string | null): Promise<void> => {
+  const boardRef = doc(boardsCollection, boardId)
+  await updateDoc(boardRef, {
+    bestAnswerPostId: postId ?? null,
+    updatedAt: serverTimestamp(),
+  })
 }
