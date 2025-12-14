@@ -152,7 +152,7 @@ export default function BoardPage() {
     })
     try {
       await incrementThanks(postId)
-      setPosts((prev) => prev.map((post) => (post.id === postId ? { ...post, thanksCount: post.thanksCount + 1 } : post)))
+      setPosts((prev) => prev.map((post) => (post.id === postId ? { ...post, thanksCount: (post.thanksCount ?? 0) + 1 } : post)))
     } catch (error) {
       console.error(error)
       setErrorPosts('Failed to send thanks')
@@ -228,7 +228,7 @@ export default function BoardPage() {
   }
 
   const renderEventDetails = (currentBoard: Board) => {
-    if (currentBoard.boardType !== 'event') return null
+    if ((currentBoard.boardType ?? 'qa') !== 'event') return null
 
     return (
       <div className="bg-muted/40 border border-border rounded-lg p-4 space-y-3">
@@ -290,7 +290,7 @@ export default function BoardPage() {
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <span className="px-2 py-1 bg-primary/10 text-primary rounded-full text-xs">{topic?.nameJa ?? 'Topic'}</span>
-              <span className="px-2 py-1 bg-muted rounded-full text-xs">{board.boardType.toUpperCase()}</span>
+              <span className="px-2 py-1 bg-muted rounded-full text-xs">{(board.boardType ?? 'qa').toUpperCase()}</span>
             </div>
             <h1 className="text-2xl font-bold text-foreground">{board.title}</h1>
             {board.description && <p className="text-muted-foreground whitespace-pre-wrap">{board.description}</p>}
@@ -353,7 +353,7 @@ export default function BoardPage() {
                     onClick={() => handleIncrementThanks(post.id)}
                     disabled={pendingThanksPostIds.has(post.id)}
                   >
-                    <ThumbsUp className="h-4 w-4" /> Thanks {post.thanksCount}
+                    <ThumbsUp className="h-4 w-4" /> Thanks {post.thanksCount ?? 0}
                   </button>
                   {isBoardOwner && !post.isBestAnswer && (
                     <button

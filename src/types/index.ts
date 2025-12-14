@@ -50,7 +50,6 @@ export interface Board {
   createdAt: Date
   updatedAt: Date
   createdBy: string
-  updatedAt: Date
   postCount: number
   latestPostAt?: Date | null | null
   yearCreated: number
