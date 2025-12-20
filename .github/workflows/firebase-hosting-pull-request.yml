@@ -40,8 +40,8 @@ jobs:
           VITE_FIREBASE_MEASUREMENT_ID: ${{ secrets.VITE_FIREBASE_MEASUREMENT_ID }}
       - name: Verify Firebase config in bundle
         run: |
-          rg -q "nitboard-57de2" dist || (echo "Firebase project id not injected into bundle" && exit 1)
-          rg -q "firebaseapp.com" dist || (echo "Firebase auth domain not injected into bundle" && exit 1)
+          grep -R -q "nitboard-57de2" dist || (echo "Firebase project id not injected into bundle" && exit 1)
+          grep -R -q "firebaseapp.com" dist || (echo "Firebase auth domain not injected into bundle" && exit 1)
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
