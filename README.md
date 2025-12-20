@@ -74,6 +74,7 @@ A student-only knowledge-sharing bulletin board for Nagoya Institute of Technolo
    - `VITE_FIREBASE_STORAGE_BUCKET`
    - `VITE_FIREBASE_MESSAGING_SENDER_ID`
    - `VITE_FIREBASE_APP_ID`
+   - `VITE_FIREBASE_MEASUREMENT_ID` (optional; include when using Analytics)
 
 4. **Development Server**
    ```bash
