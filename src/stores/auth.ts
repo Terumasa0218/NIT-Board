@@ -56,6 +56,7 @@ const createUserDocument = async (
     avatarUrl,
     universityId: DEFAULT_UNIVERSITY_ID,
     suspendedUntil: undefined,
+    departmentId: undefined,
     department: undefined,
     grade: undefined,
     circles: [],
@@ -84,8 +85,8 @@ const createUserDocument = async (
     docData.avatarUrl = userData.avatarUrl
   }
 
-  if (userData.department !== undefined) {
-    docData.department = userData.department
+  if (userData.departmentId !== undefined) {
+    docData.departmentId = userData.departmentId
   }
 
   if (userData.grade !== undefined) {

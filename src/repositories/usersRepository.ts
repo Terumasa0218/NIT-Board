@@ -14,14 +14,32 @@ import {
 import { db } from '@/firebase'
 import type { User } from '@/types'
 import { DEFAULT_UNIVERSITY_ID } from '@/constants/university'
+import { DEPARTMENTS } from '@/constants/departments'
 
 const usersCollection = collection(db, 'users')
+const DEPARTMENT_IDS = new Set(DEPARTMENTS.map(dept => dept.id))
+
+const normalizeDepartmentId = (data: DocumentData): string | undefined => {
+  const candidates = [data.departmentId, data.department, data.dept]
+
+  for (const candidate of candidates) {
+    if (typeof candidate !== 'string') continue
+    const trimmed = candidate.trim()
+    if (DEPARTMENT_IDS.has(trimmed)) {
+      return trimmed
+    }
+  }
+
+  return undefined
+}
 
 const toUser = (snapshot: DocumentSnapshot<DocumentData>): User => {
   const data = snapshot.data()
   if (!data) {
     throw new Error('User data is missing')
   }
+
+  const departmentId = normalizeDepartmentId(data)
 
   return {
     id: snapshot.id,
@@ -30,7 +48,8 @@ const toUser = (snapshot: DocumentSnapshot<DocumentData>): User => {
     universityId: data.universityId || DEFAULT_UNIVERSITY_ID,
     avatarUrl: data.avatarUrl,
     suspendedUntil: data.suspendedUntil?.toDate(),
-    department: data.department,
+    departmentId,
+    department: departmentId,
     grade: data.grade,
     circles: data.circles || [],
     bio: data.bio,
@@ -79,7 +98,8 @@ export const updateUserProfile = async (
   userId: string,
   input: {
     nickname?: string
-    department?: string
+    departmentId?: string | null
+    department?: string | null
     grade?: string
     circles?: string[]
     bio?: string
@@ -92,7 +112,13 @@ export const updateUserProfile = async (
   }
 
   if (input.nickname !== undefined) updateData.nickname = input.nickname
-  if (input.department !== undefined) updateData.department = input.department
+  if (input.departmentId !== undefined) {
+    const normalized = input.departmentId && DEPARTMENT_IDS.has(input.departmentId) ? input.departmentId : null
+    updateData.departmentId = normalized
+    updateData.department = normalized
+  } else if (input.department !== undefined) {
+    updateData.department = input.department
+  }
   if (input.grade !== undefined) updateData.grade = input.grade
   if (input.circles !== undefined) updateData.circles = input.circles
   if (input.bio !== undefined) updateData.bio = input.bio

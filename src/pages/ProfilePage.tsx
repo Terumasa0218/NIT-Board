@@ -11,6 +11,7 @@ import type { Board, User } from '@/types'
 import toast from 'react-hot-toast'
 import { useAppStore } from '@/stores/appStore'
 import { isMutualFollow } from '@/utils/follow'
+import { DEPARTMENTS, getDepartmentById } from '@/constants/departments'
 
 interface UserStats {
   answers: number
@@ -32,7 +33,7 @@ export default function ProfilePage() {
   const [followLoading, setFollowLoading] = useState(false)
 
   const [nickname, setNickname] = useState('')
-  const [department, setDepartment] = useState('')
+  const [departmentId, setDepartmentId] = useState('')
   const [grade, setGrade] = useState('')
   const [circles, setCircles] = useState('')
   const [bio, setBio] = useState('')
@@ -59,6 +60,12 @@ export default function ProfilePage() {
     return isMutualFollow(userProfile, profile)
   }, [profile, userProfile])
 
+  const profileDepartmentLabel = useMemo(() => {
+    if (!profile?.departmentId) return ''
+    const department = getDepartmentById(profile.departmentId)
+    return department ? department.nameJa : profile.departmentId
+  }, [profile?.departmentId])
+
   const loadProfile = async () => {
     if (!targetUserId) return
     setLoadingProfile(true)
@@ -67,7 +74,7 @@ export default function ProfilePage() {
       setProfile(fetched)
       if (fetched) {
         setNickname(fetched.nickname || '')
-        setDepartment(fetched.department || '')
+        setDepartmentId(fetched.departmentId || '')
         setGrade(fetched.grade || '')
         setCircles((fetched.circles || []).join(', '))
         setBio(fetched.bio || '')
@@ -119,7 +126,14 @@ export default function ProfilePage() {
         .split(',')
         .map((c) => c.trim())
         .filter(Boolean)
-      await updateProfile({ nickname, department, grade, circles: circlesArray, bio, avatarUrl: avatarUrl || undefined })
+      await updateProfile({
+        nickname,
+        departmentId: departmentId || null,
+        grade,
+        circles: circlesArray,
+        bio,
+        avatarUrl: avatarUrl || undefined,
+      })
       await loadProfile()
       toast.success('プロフィールを更新しました')
     } catch (error) {
@@ -198,7 +212,7 @@ export default function ProfilePage() {
             <h1 className="text-2xl font-bold text-foreground">{profile?.nickname || 'ユーザー'}</h1>
             <p className="text-muted-foreground text-sm">{profile?.bio || '自己紹介はまだありません'}</p>
             <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-              {profile?.department && <span className="px-2 py-1 bg-muted rounded-full">{profile.department}</span>}
+              {profileDepartmentLabel && <span className="px-2 py-1 bg-muted rounded-full">{profileDepartmentLabel}</span>}
               {profile?.grade && <span className="px-2 py-1 bg-muted rounded-full">{profile.grade}</span>}
               {profile?.circles && profile.circles.length > 0 && (
                 <span className="px-2 py-1 bg-muted rounded-full">{profile.circles.join(', ')}</span>
@@ -249,7 +263,7 @@ export default function ProfilePage() {
             </div>
             <div className="flex items-center gap-2">
               <BookOpen className="h-4 w-4" />
-              <span>{profile.department || '学科未設定'}</span>
+              <span>{profileDepartmentLabel || '学科未設定'}</span>
             </div>
             <div className="flex items-center gap-2">
               <BookOpen className="h-4 w-4" />
@@ -283,7 +297,20 @@ export default function ProfilePage() {
             </div>
             <div className="space-y-1">
               <label className="text-sm text-muted-foreground">学科</label>
-              <input type="text" value={department} onChange={(e) => setDepartment(e.target.value)} className="input w-full" />
+              <select
+                value={departmentId}
+                onChange={(e) => setDepartmentId(e.target.value)}
+                className="input w-full"
+                required
+              >
+                <option value="">学科が未設定です。選択してください</option>
+                {DEPARTMENTS.map((dept) => (
+                  <option key={dept.id} value={dept.id}>
+                    {dept.nameJa}
+                  </option>
+                ))}
+              </select>
+              {!departmentId && <p className="text-xs text-destructive">学科が未設定です。選択してください。</p>}
             </div>
             <div className="space-y-1">
               <label className="text-sm text-muted-foreground">学年</label>

@@ -18,6 +18,7 @@ export default function BoardsPage() {
   const [sortType, setSortType] = useState<SortType>('latest')
   const [boards, setBoards] = useState<Board[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const profileDepartmentId = userProfile?.departmentId || userProfile?.department
   const allTopics = useMemo(() => getActiveTopics(), [])
   const searchParamsString = searchParams.toString()
 
@@ -65,7 +66,7 @@ export default function BoardsPage() {
     if (selectedDepartmentId) return
 
     const lastSelected = typeof window !== 'undefined' ? localStorage.getItem(LAST_SELECTED_DEPT_KEY) : null
-    const fallbackDept = lastSelected || userProfile?.department
+    const fallbackDept = lastSelected || profileDepartmentId
 
     if (fallbackDept) {
       const params = new URLSearchParams(searchParamsString)
@@ -76,7 +77,7 @@ export default function BoardsPage() {
         localStorage.setItem(LAST_SELECTED_DEPT_KEY, fallbackDept)
       }
     }
-  }, [selectedDepartmentId, userProfile?.department, searchParamsString, setSearchParams])
+  }, [selectedDepartmentId, profileDepartmentId, searchParamsString, setSearchParams])
 
   useEffect(() => {
     if (selectedTopicId && !currentTopic) {
@@ -176,12 +177,12 @@ export default function BoardsPage() {
   }
 
   const handleResetToMyDepartment = () => {
-    if (!userProfile?.department) return
+    if (!profileDepartmentId) return
     setSearchQuery('')
     if (typeof window !== 'undefined') {
-      localStorage.setItem(LAST_SELECTED_DEPT_KEY, userProfile.department)
+      localStorage.setItem(LAST_SELECTED_DEPT_KEY, profileDepartmentId)
     }
-    updateSearchParams({ dept: userProfile.department, topic: null }, { replace: true })
+    updateSearchParams({ dept: profileDepartmentId, topic: null }, { replace: true })
   }
 
   if (isLoading) {
@@ -241,7 +242,7 @@ export default function BoardsPage() {
               type="button"
               className="btn btn-outline btn-sm"
               onClick={handleResetToMyDepartment}
-              disabled={!userProfile?.department || userProfile.department === selectedDepartmentId}
+              disabled={!profileDepartmentId || profileDepartmentId === selectedDepartmentId}
             >
               自分の学科へ
             </button>
