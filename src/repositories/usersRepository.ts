@@ -77,7 +77,14 @@ export const getUsersByIds = async (userIds: string[]): Promise<Record<string, U
 
 export const updateUserProfile = async (
   userId: string,
-  input: { nickname?: string; department?: string; grade?: string; circles?: string[]; bio?: string },
+  input: {
+    nickname?: string
+    department?: string
+    grade?: string
+    circles?: string[]
+    bio?: string
+    avatarUrl?: string | null
+  },
 ): Promise<void> => {
   const userRef = doc(usersCollection, userId)
   const updateData: Record<string, unknown> = {
@@ -89,6 +96,7 @@ export const updateUserProfile = async (
   if (input.grade !== undefined) updateData.grade = input.grade
   if (input.circles !== undefined) updateData.circles = input.circles
   if (input.bio !== undefined) updateData.bio = input.bio
+  if (input.avatarUrl !== undefined) updateData.avatarUrl = input.avatarUrl ?? null
 
   await updateDoc(userRef, updateData)
 }

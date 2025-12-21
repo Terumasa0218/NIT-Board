@@ -23,7 +23,8 @@ const Avatar = ({ user }: { user?: User }) => {
 
 export default function BoardPage() {
   const { boardId } = useParams<{ boardId: string }>()
-  const authUserId = useAuthStore((state) => state.user?.id ?? null)
+  const authUser = useAuthStore((state) => state.user)
+  const authUserId = authUser?.id ?? null
 
   const [board, setBoard] = useState<Board | null>(null)
   const [topic, setTopic] = useState<Topic | null>(null)
@@ -41,6 +42,14 @@ export default function BoardPage() {
     if (!board || !authUserId) return false
     return board.createdBy === authUserId
   }, [authUserId, board])
+
+  const updateRecentBoards = (id: string) => {
+    const key = 'recentBoardIds'
+    const raw = localStorage.getItem(key)
+    const current = raw ? (JSON.parse(raw) as string[]) : []
+    const next = [id, ...current.filter((item) => item !== id)].slice(0, 10)
+    localStorage.setItem(key, JSON.stringify(next))
+  }
 
   const applyBestAnswerFlag = (currentBoard: Board | null, currentPosts: Post[]): Post[] => {
     if (!currentBoard) return currentPosts
@@ -60,6 +69,7 @@ export default function BoardPage() {
         setBoard(null)
       } else {
         setBoard(result)
+        updateRecentBoards(result.id)
       }
     } catch (error) {
       console.error(error)
@@ -131,7 +141,13 @@ export default function BoardPage() {
     setIsSubmitting(true)
     setErrorPosts(null)
     try {
-      const created = await createPost({ boardId, authorId: authUserId, text: newPostText.trim() })
+      const created = await createPost({
+        boardId,
+        authorId: authUserId,
+        authorName: authUser?.nickname,
+        authorAvatarUrl: authUser?.avatarUrl,
+        text: newPostText.trim(),
+      })
       setNewPostText('')
       setPosts((prev) => applyBestAnswerFlag(board, [...prev, created]))
       await fetchUsers([authUserId])
@@ -204,14 +220,33 @@ export default function BoardPage() {
     </div>
   )
 
-  const renderUserInfo = (userId: string) => {
+  const renderUserInfo = (userId: string, fallbackName?: string | null, fallbackAvatar?: string | null) => {
     const user = usersMap[userId]
+    const displayName = user?.nickname ?? fallbackName ?? 'Unknown User'
+    const avatarUrl = user?.avatarUrl ?? fallbackAvatar ?? undefined
     return (
       <div className="flex items-center gap-3">
-        <Avatar user={user} />
+        <Avatar
+          user={
+            avatarUrl
+              ? {
+                  ...user,
+                  avatarUrl,
+                  nickname: displayName,
+                  id: userId,
+                  email: user?.email ?? '',
+                  followers: user?.followers ?? [],
+                  following: user?.following ?? [],
+                  preferredLocale: user?.preferredLocale ?? 'ja',
+                  createdAt: user?.createdAt ?? new Date(),
+                  updatedAt: user?.updatedAt ?? new Date(),
+                }
+              : user
+          }
+        />
         <div className="flex flex-col">
           <Link to={`/users/${userId}`} className="text-sm font-semibold text-foreground hover:underline">
-            {user?.nickname ?? 'Unknown User'}
+            {displayName}
           </Link>
           <span className="text-xs text-muted-foreground">{userId}</span>
         </div>
@@ -334,7 +369,7 @@ export default function BoardPage() {
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
                     <div className="flex items-start justify-between gap-4 mb-3">
-                      {renderUserInfo(post.authorId)}
+                      {renderUserInfo(post.authorId, post.authorName, post.authorAvatarUrl)}
                       <div className="flex flex-col items-end gap-1 text-xs text-muted-foreground">
                         <span>{post.createdAt.toLocaleString()}</span>
                         {post.isBestAnswer && (

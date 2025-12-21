@@ -36,6 +36,7 @@ export default function ProfilePage() {
   const [grade, setGrade] = useState('')
   const [circles, setCircles] = useState('')
   const [bio, setBio] = useState('')
+  const [avatarUrl, setAvatarUrl] = useState('')
 
   const isOwnProfile = useMemo(() => {
     if (userId) {
@@ -70,6 +71,7 @@ export default function ProfilePage() {
         setGrade(fetched.grade || '')
         setCircles((fetched.circles || []).join(', '))
         setBio(fetched.bio || '')
+        setAvatarUrl(fetched.avatarUrl || '')
       }
     } catch (error) {
       console.error(error)
@@ -117,7 +119,7 @@ export default function ProfilePage() {
         .split(',')
         .map((c) => c.trim())
         .filter(Boolean)
-      await updateProfile({ nickname, department, grade, circles: circlesArray, bio })
+      await updateProfile({ nickname, department, grade, circles: circlesArray, bio, avatarUrl: avatarUrl || undefined })
       await loadProfile()
       toast.success('プロフィールを更新しました')
     } catch (error) {
@@ -269,11 +271,11 @@ export default function ProfilePage() {
             <h2 className="text-lg font-semibold">プロフィールを編集</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="text-sm text-muted-foreground">ニックネーム</label>
-              <input
-                type="text"
-                value={nickname}
+          <div className="space-y-1">
+            <label className="text-sm text-muted-foreground">ニックネーム</label>
+            <input
+              type="text"
+              value={nickname}
                 onChange={(e) => setNickname(e.target.value)}
                 className="input w-full"
                 required
@@ -290,6 +292,16 @@ export default function ProfilePage() {
             <div className="space-y-1">
               <label className="text-sm text-muted-foreground">所属サークル（カンマ区切り）</label>
               <input type="text" value={circles} onChange={(e) => setCircles(e.target.value)} className="input w-full" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-sm text-muted-foreground">アイコンURL</label>
+              <input
+                type="url"
+                value={avatarUrl}
+                onChange={(e) => setAvatarUrl(e.target.value)}
+                className="input w-full"
+                placeholder="https://example.com/avatar.png"
+              />
             </div>
             <div className="space-y-1 md:col-span-2">
               <label className="text-sm text-muted-foreground">自己紹介</label>
