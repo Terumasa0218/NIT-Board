@@ -5,6 +5,7 @@ export interface User {
   universityId?: string
   avatarUrl?: string
   suspendedUntil?: Date
+  departmentId?: string
   department?: string
   grade?: string
   circles?: string[]
