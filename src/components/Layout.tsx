@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom'
 import { useAppStore } from '@/stores/appStore'
 import Sidebar from './Sidebar'
 import Header from './Header'
+import BuildInfo from './BuildInfo'
 
 export default function Layout() {
   const { selectedUniversityId } = useAppStore()
@@ -19,6 +20,9 @@ export default function Layout() {
         <main className="flex-1 overflow-auto p-6 pb-10">
           <Outlet />
         </main>
+        <div className="px-6 pb-2">
+          <BuildInfo />
+        </div>
       </div>
     </div>
   )
