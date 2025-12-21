@@ -112,6 +112,25 @@ const createUserDocument = async (
   }
 }
 
+const deriveNickname = (firebaseUser: FirebaseUser): string => {
+  if (firebaseUser.displayName?.trim()) return firebaseUser.displayName.trim()
+  if (firebaseUser.email) {
+    const localPart = firebaseUser.email.split('@')[0]
+    if (localPart) return localPart
+  }
+  return 'ユーザー'
+}
+
+const ensureUserRecord = async (firebaseUser: FirebaseUser): Promise<User> => {
+  const existing = await getUserById(firebaseUser.uid)
+  if (existing) {
+    return existing
+  }
+  const nickname = deriveNickname(firebaseUser)
+  const avatarUrl = firebaseUser.photoURL ?? undefined
+  return createUserDocument(firebaseUser, nickname, avatarUrl)
+}
+
 export const useAuthStore = create<AuthStore>()(
   persist(
     (set, get) => ({
@@ -129,33 +148,11 @@ export const useAuthStore = create<AuthStore>()(
             throw new Error('EMAIL_NOT_VERIFIED')
           }
 
-          const userDoc = await getUserById(firebaseUser.uid)
-
-          if (userDoc) {
-            if (userDoc.suspendedUntil && userDoc.suspendedUntil > new Date()) {
-              throw new Error('USER_SUSPENDED')
-            }
-            set({ user: userDoc, userProfile: userDoc, loading: false })
-          } else {
-            const minimalUser: User = {
-              id: firebaseUser.uid,
-              email: firebaseUser.email!,
-              nickname: '',
-              universityId: DEFAULT_UNIVERSITY_ID,
-              avatarUrl: undefined,
-              suspendedUntil: undefined,
-              department: undefined,
-              grade: undefined,
-              circles: [],
-              bio: undefined,
-              followers: [],
-              following: [],
-              preferredLocale: 'ja',
-              createdAt: new Date(),
-              updatedAt: new Date(),
-            }
-            set({ user: minimalUser, userProfile: minimalUser, loading: false })
+          const userDoc = await ensureUserRecord(firebaseUser)
+          if (userDoc.suspendedUntil && userDoc.suspendedUntil > new Date()) {
+            throw new Error('USER_SUSPENDED')
           }
+          set({ user: userDoc, userProfile: userDoc, loading: false })
         } catch (error) {
           console.error('AuthStore: Login error:', error)
           set({ loading: false })
@@ -272,7 +269,7 @@ export const useAuthStore = create<AuthStore>()(
           }
 
           try {
-            const userDoc = await getUserById(firebaseUser.uid)
+            const userDoc = await ensureUserRecord(firebaseUser)
             if (userDoc && (!userDoc.suspendedUntil || userDoc.suspendedUntil <= new Date())) {
               set({ user: userDoc, userProfile: userDoc, loading: false })
             } else {
@@ -318,6 +315,7 @@ export const useAuthStore = create<AuthStore>()(
               id: state.user.id,
               email: state.user.email,
               nickname: state.user.nickname,
+              avatarUrl: state.user.avatarUrl,
               preferredLocale: state.user.preferredLocale,
               universityId: state.user.universityId,
             }
@@ -327,6 +325,7 @@ export const useAuthStore = create<AuthStore>()(
               id: state.userProfile.id,
               email: state.userProfile.email,
               nickname: state.userProfile.nickname,
+              avatarUrl: state.userProfile.avatarUrl,
               preferredLocale: state.userProfile.preferredLocale,
               universityId: state.userProfile.universityId,
             }

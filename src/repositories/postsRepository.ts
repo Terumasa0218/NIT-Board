@@ -33,6 +33,8 @@ const toPost = (snapshot: QueryDocumentSnapshot<DocumentData> | DocumentSnapshot
     universityId: data.universityId || DEFAULT_UNIVERSITY_ID,
     boardId: data.boardId,
     authorId: data.authorId,
+    authorName: data.authorName,
+    authorAvatarUrl: data.authorAvatarUrl,
     text: data.text,
     imageUrls: data.imageUrls || [],
     createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : new Date(),
@@ -55,7 +57,13 @@ export const listPostsByAuthor = async (authorId: string): Promise<Post[]> => {
   return snapshot.docs.map((docSnapshot) => toPost(docSnapshot))
 }
 
-export const createPost = async (input: { boardId: string; authorId: string; text: string }): Promise<Post> => {
+export const createPost = async (input: {
+  boardId: string
+  authorId: string
+  authorName?: string
+  authorAvatarUrl?: string
+  text: string
+}): Promise<Post> => {
   const postRef = doc(postsCollection)
   const boardRef = doc(boardsCollection, input.boardId)
 
@@ -71,6 +79,8 @@ export const createPost = async (input: { boardId: string; authorId: string; tex
     transaction.set(postRef, {
       boardId: input.boardId,
       authorId: input.authorId,
+      authorName: input.authorName ?? null,
+      authorAvatarUrl: input.authorAvatarUrl ?? null,
       text: input.text,
       imageUrls: [],
       thanksCount: 0,
