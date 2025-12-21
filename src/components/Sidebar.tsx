@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom'
 import { useMemo } from 'react'
 import { useAuthStore } from '@/stores/auth'
 import { useI18n } from '@/utils/i18n'
-import { Home, Calendar, Settings, User, Layers } from 'lucide-react'
+import { Home, Calendar, Settings, User, Layers, MessageSquare } from 'lucide-react'
 
 export default function Sidebar() {
   const { user } = useAuthStore()

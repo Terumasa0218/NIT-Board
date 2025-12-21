@@ -119,7 +119,7 @@ export default function ProfilePage() {
         .split(',')
         .map((c) => c.trim())
         .filter(Boolean)
-      await updateProfile({ nickname, department, grade, circles: circlesArray, bio, avatarUrl: avatarUrl || null })
+      await updateProfile({ nickname, department, grade, circles: circlesArray, bio, avatarUrl: avatarUrl || undefined })
       await loadProfile()
       toast.success('プロフィールを更新しました')
     } catch (error) {
