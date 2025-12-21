@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom'
 import { useMemo } from 'react'
 import { useAuthStore } from '@/stores/auth'
 import { useI18n } from '@/utils/i18n'
-import { Home, MessageSquare, Calendar, Settings, User, Layers } from 'lucide-react'
+import { Home, Calendar, Settings, User, Layers } from 'lucide-react'
 
 export default function Sidebar() {
   const { user } = useAuthStore()
@@ -13,11 +13,6 @@ export default function Sidebar() {
       to: '/',
       icon: Home,
       label: t('nav.home'),
-    },
-    {
-      to: '/departments',
-      icon: MessageSquare,
-      label: t('nav.boards'),
     },
     {
       to: '/boards',

@@ -7,6 +7,8 @@ const requiredEnvVars = [
   'VITE_FIREBASE_APP_ID',
 ] as const
 
+const optionalEnvVars = ['VITE_FIREBASE_MEASUREMENT_ID'] as const
+
 function getEnvVar(key: (typeof requiredEnvVars)[number]): string {
   const value = import.meta.env[key]
   if (!value) {
@@ -22,6 +24,7 @@ export const firebaseConfig = {
   storageBucket: getEnvVar('VITE_FIREBASE_STORAGE_BUCKET'),
   messagingSenderId: getEnvVar('VITE_FIREBASE_MESSAGING_SENDER_ID'),
   appId: getEnvVar('VITE_FIREBASE_APP_ID'),
+  measurementId: import.meta.env[optionalEnvVars[0]] || undefined,
 }
 
 type FirebaseConfig = typeof firebaseConfig

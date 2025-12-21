@@ -61,6 +61,8 @@ export interface Post {
   universityId?: string
   boardId: string
   authorId: string
+  authorName?: string
+  authorAvatarUrl?: string
   text: string
   imageUrls: string[]
   createdAt: Date
