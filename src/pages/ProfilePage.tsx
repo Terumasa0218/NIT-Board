@@ -128,7 +128,7 @@ export default function ProfilePage() {
         .filter(Boolean)
       await updateProfile({
         nickname,
-        departmentId: departmentId || null,
+        departmentId: departmentId || undefined,
         grade,
         circles: circlesArray,
         bio,
