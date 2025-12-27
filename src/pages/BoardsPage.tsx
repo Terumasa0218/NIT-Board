@@ -8,22 +8,34 @@ import { DEPARTMENTS, getActiveTopics } from '@/constants/departments'
 import { useAuthStore } from '@/stores/auth'
 
 type SortType = 'latest' | 'popular' | 'unanswered'
-const LAST_SELECTED_DEPT_KEY = 'lastSelectedDeptId'
+const LAST_SELECTED_DEPT_KEY = 'nitboard:lastSelectedDepartmentId'
 
 export default function BoardsPage() {
   const { t, currentLocale } = useI18n()
-  const { userProfile } = useAuthStore()
+  const { userProfile, updateProfile } = useAuthStore()
   const [searchParams, setSearchParams] = useSearchParams()
   const [searchQuery, setSearchQuery] = useState('')
   const [sortType, setSortType] = useState<SortType>('latest')
   const [boards, setBoards] = useState<Board[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const profileDepartmentId = userProfile?.departmentId || userProfile?.department
+  const [persistedDepartmentId, setPersistedDepartmentId] = useState<string | null>(null)
+  const [profileSaveStatus, setProfileSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle')
+  const [profileSaveError, setProfileSaveError] = useState<string | null>(null)
   const allTopics = useMemo(() => getActiveTopics(), [])
   const searchParamsString = searchParams.toString()
 
-  const selectedDepartmentId = searchParams.get('dept') || undefined
+  const isValidDepartmentId = useCallback(
+    (deptId?: string | null) => !!deptId && DEPARTMENTS.some(dept => dept.id === deptId),
+    [],
+  )
+
+  const rawDepartmentId = searchParams.get('dept') || undefined
+  const selectedDepartmentId = isValidDepartmentId(rawDepartmentId) ? rawDepartmentId : undefined
   const selectedTopicId = searchParams.get('topic') || undefined
+  const profileDepartmentId = useMemo(() => {
+    const deptId = userProfile?.departmentId ?? userProfile?.department
+    return isValidDepartmentId(deptId) ? deptId : undefined
+  }, [isValidDepartmentId, userProfile])
 
   const currentDepartment = useMemo(
     () => DEPARTMENTS.find(dept => dept.id === selectedDepartmentId) ?? null,
@@ -39,6 +51,10 @@ export default function BoardsPage() {
   )
 
   const currentTopic = availableTopics.find(topic => topic.id === selectedTopicId) ?? null
+  const resolvedDepartmentId = useMemo(
+    () => selectedDepartmentId ?? persistedDepartmentId ?? profileDepartmentId ?? undefined,
+    [persistedDepartmentId, profileDepartmentId, selectedDepartmentId],
+  )
 
   const updateSearchParams = useCallback(
     (updates: { dept?: string | null; topic?: string | null }, options?: { replace?: boolean }) => {
@@ -63,21 +79,37 @@ export default function BoardsPage() {
   )
 
   useEffect(() => {
-    if (selectedDepartmentId) return
-
-    const lastSelected = typeof window !== 'undefined' ? localStorage.getItem(LAST_SELECTED_DEPT_KEY) : null
-    const fallbackDept = lastSelected || profileDepartmentId
-
-    if (fallbackDept) {
-      const params = new URLSearchParams(searchParamsString)
-      if (params.get('dept') === fallbackDept) return
-      params.set('dept', fallbackDept)
-      setSearchParams(params, { replace: true })
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(LAST_SELECTED_DEPT_KEY, fallbackDept)
-      }
+    if (typeof window === 'undefined') return
+    const stored = localStorage.getItem(LAST_SELECTED_DEPT_KEY)
+    if (stored && isValidDepartmentId(stored)) {
+      setPersistedDepartmentId(stored)
+    } else if (stored && !isValidDepartmentId(stored)) {
+      localStorage.removeItem(LAST_SELECTED_DEPT_KEY)
     }
-  }, [selectedDepartmentId, profileDepartmentId, searchParamsString, setSearchParams])
+  }, [isValidDepartmentId])
+
+  useEffect(() => {
+    if (!selectedDepartmentId && rawDepartmentId && !isValidDepartmentId(rawDepartmentId)) {
+      updateSearchParams({ dept: null, topic: null }, { replace: true })
+      return
+    }
+
+    if (!selectedDepartmentId && resolvedDepartmentId) {
+      setSearchQuery('')
+      updateSearchParams({ dept: resolvedDepartmentId, topic: null }, { replace: true })
+      return
+    }
+  }, [isValidDepartmentId, rawDepartmentId, resolvedDepartmentId, selectedDepartmentId, updateSearchParams])
+
+  useEffect(() => {
+    if (!selectedDepartmentId) return
+    setPersistedDepartmentId(selectedDepartmentId)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(LAST_SELECTED_DEPT_KEY, selectedDepartmentId)
+    }
+    setProfileSaveStatus('idle')
+    setProfileSaveError(null)
+  }, [selectedDepartmentId])
 
   useEffect(() => {
     if (selectedTopicId && !currentTopic) {
@@ -117,6 +149,15 @@ export default function BoardsPage() {
       isMounted = false
     }
   }, [selectedDepartmentId, selectedTopicId, currentTopic])
+
+  useEffect(() => {
+    if (!selectedDepartmentId) return
+    if (selectedTopicId && currentTopic) return
+    const firstAvailableTopic = availableTopics[0]
+    if (!firstAvailableTopic) return
+    setSearchQuery('')
+    updateSearchParams({ topic: firstAvailableTopic.id }, { replace: true })
+  }, [availableTopics, currentTopic, selectedDepartmentId, selectedTopicId, updateSearchParams])
 
   const filteredBoards = useMemo(() => {
     let result = [...boards]
@@ -161,29 +202,48 @@ export default function BoardsPage() {
     return currentLocale === 'en' ? topic.nameEn : topic.nameJa
   }
 
-  const handleDepartmentChange = (deptId: string) => {
-    if (!deptId) return
-    setSearchQuery('')
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(LAST_SELECTED_DEPT_KEY, deptId)
-    }
-    updateSearchParams({ dept: deptId, topic: null })
-  }
+  const handleDepartmentChange = useCallback(
+    (deptId: string) => {
+      if (!deptId) return
+      setSearchQuery('')
+      updateSearchParams({ dept: deptId, topic: null })
+    },
+    [updateSearchParams],
+  )
 
-  const handleTopicSelect = (topicId: string) => {
-    if (!topicId) return
-    setSearchQuery('')
-    updateSearchParams({ topic: topicId })
-  }
+  const handleTopicSelect = useCallback(
+    (topicId: string, options?: { replace?: boolean }) => {
+      if (!topicId) return
+      setSearchQuery('')
+      updateSearchParams({ topic: topicId }, options)
+    },
+    [updateSearchParams],
+  )
 
   const handleResetToMyDepartment = () => {
     if (!profileDepartmentId) return
     setSearchQuery('')
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(LAST_SELECTED_DEPT_KEY, profileDepartmentId)
-    }
     updateSearchParams({ dept: profileDepartmentId, topic: null }, { replace: true })
   }
+
+  const handleSaveDepartmentToProfile = async () => {
+    if (!selectedDepartmentId || !userProfile) return
+    setProfileSaveStatus('saving')
+    setProfileSaveError(null)
+    try {
+      await updateProfile({ departmentId: selectedDepartmentId })
+      setProfileSaveStatus('success')
+    } catch (error) {
+      console.error('Failed to save department to profile', error)
+      setProfileSaveStatus('error')
+      setProfileSaveError('プロフィールの保存に失敗しました。権限を確認して再度お試しください。')
+    }
+  }
+
+  const canSaveDepartmentToProfile =
+    !!selectedDepartmentId && !!userProfile && selectedDepartmentId !== profileDepartmentId
+  const canResetToMyDepartment = !!profileDepartmentId && profileDepartmentId !== selectedDepartmentId
+  const showProfileGuidance = !profileDepartmentId
 
   if (isLoading) {
     return (
@@ -242,11 +302,41 @@ export default function BoardsPage() {
               type="button"
               className="btn btn-outline btn-sm"
               onClick={handleResetToMyDepartment}
-              disabled={!profileDepartmentId || profileDepartmentId === selectedDepartmentId}
+              disabled={!canResetToMyDepartment}
             >
               自分の学科へ
             </button>
           </div>
+
+          {showProfileGuidance && (
+            <p className="text-sm text-muted-foreground">
+              プロフィールに学科が未設定です。学科を選択すると、このページから掲示板を閲覧できます。
+            </p>
+          )}
+
+          {canSaveDepartmentToProfile && (
+            <div className="rounded-md border border-muted p-4 space-y-2 bg-card">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="text-sm text-foreground">
+                  選択した学科をプロフィールに保存できます。
+                </div>
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  onClick={handleSaveDepartmentToProfile}
+                  disabled={profileSaveStatus === 'saving'}
+                >
+                  {profileSaveStatus === 'saving' ? '保存中...' : 'この学科をプロフィールに保存'}
+                </button>
+              </div>
+              {profileSaveStatus === 'success' && (
+                <p className="text-sm text-green-600">プロフィールに保存しました。</p>
+              )}
+              {profileSaveStatus === 'error' && (
+                <p className="text-sm text-destructive">{profileSaveError}</p>
+              )}
+            </div>
+          )}
 
           <div className="flex flex-wrap gap-2">
             {availableTopics.map((topic) => (
@@ -311,13 +401,18 @@ export default function BoardsPage() {
       {!selectedDepartmentId ? (
         <div className="text-center py-12 space-y-3">
           <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
-          <h3 className="text-lg font-medium text-foreground">プロフィールで学科を設定してください</h3>
+          <h3 className="text-lg font-medium text-foreground">学科を選択してください</h3>
           <p className="text-muted-foreground">
-            学科が未設定のため掲示板を表示できません。プロフィールで学科を設定してください。
+            上部のセレクトから学科を選ぶとトピック一覧が表示されます。選択内容はブラウザに保存され、次回以降も引き継がれます。
           </p>
-          <Link to="/profile" className="btn btn-primary btn-sm">
-            プロフィールへ
-          </Link>
+          <div className="flex items-center justify-center gap-3 flex-wrap">
+            <Link to="/boards" className="btn btn-primary btn-sm" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+              学科を選ぶ
+            </Link>
+            <Link to="/profile" className="btn btn-outline btn-sm">
+              プロフィールで設定する
+            </Link>
+          </div>
         </div>
       ) : !currentTopic ? (
         <div className="text-center py-12 space-y-3">
