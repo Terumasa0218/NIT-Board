@@ -13,7 +13,7 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userIdField;
     }
 
-    // Users collection
+    // Users collection (deployment verification comment)
     match /users/{userId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn() && request.auth.uid == request.resource.data.id;
