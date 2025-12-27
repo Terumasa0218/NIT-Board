@@ -20,6 +20,10 @@ jobs:
       VITE_BUILD_SHA: ${{ github.sha }}
     steps:
       - uses: actions/checkout@v4
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_NITBOARD_57DE2 }}'
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -45,12 +49,18 @@ jobs:
         run: |
           grep -R -q "nitboard-57de2" dist || (echo "Firebase project id not injected into bundle" && exit 1)
           grep -R -q "firebaseapp.com" dist || (echo "Firebase auth domain not injected into bundle" && exit 1)
-      - name: Deploy Firestore rules and indexes
-        env:
-          FIREBASE_SERVICE_ACCOUNT_NITBOARD_57DE2: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_NITBOARD_57DE2 }}
+      - name: Preflight Firestore deploy permissions
         run: |
-          echo "${FIREBASE_SERVICE_ACCOUNT_NITBOARD_57DE2}" > "$HOME/firebase-key.json"
-          export GOOGLE_APPLICATION_CREDENTIALS="$HOME/firebase-key.json"
+          if ! npx firebase-tools firestore:indexes --project nitboard-57de2; then
+            echo "Firestore preflight failed. The service account may be missing required roles (Firebase Rules Admin / Firestore Index Admin) or firebaserules.googleapis.com is disabled."
+            exit 1
+          fi
+      - name: Deploy Firestore rules and indexes
+        run: |
+          # Required IAM roles for the service account:
+          # - Firebase Rules Admin (or equivalent)
+          # - Firestore/Datastore Index Admin (or equivalent)
+          # Ensure firebaserules.googleapis.com is enabled in the project.
           npx firebase-tools deploy --only firestore:rules,firestore:indexes --project nitboard-57de2
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:

@@ -171,6 +171,11 @@ firebase deploy
 
 The application will be deployed to: https://nitboard-57de2.web.app/
 
+### CI Service Account Requirements (Hosting + Firestore rules/indexes)
+GitHub Actions uses the `FIREBASE_SERVICE_ACCOUNT_NITBOARD_57DE2` secret. If Firestore rules/indexes deploy fails with a 403, ensure:
+- IAM roles include Firebase Rules Admin (or equivalent) and Firestore/Datastore Index Admin (or equivalent).
+- `firebaserules.googleapis.com` is enabled for the `nitboard-57de2` project.
+
 ### Deploy Firestore Rules & Indexes
 ```bash
 # Deploy Firestore security rules
