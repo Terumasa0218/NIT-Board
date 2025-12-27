@@ -45,6 +45,13 @@ jobs:
         run: |
           grep -R -q "nitboard-57de2" dist || (echo "Firebase project id not injected into bundle" && exit 1)
           grep -R -q "firebaseapp.com" dist || (echo "Firebase auth domain not injected into bundle" && exit 1)
+      - name: Deploy Firestore rules and indexes
+        env:
+          FIREBASE_SERVICE_ACCOUNT_NITBOARD_57DE2: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_NITBOARD_57DE2 }}
+        run: |
+          echo "${FIREBASE_SERVICE_ACCOUNT_NITBOARD_57DE2}" > "$HOME/firebase-key.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$HOME/firebase-key.json"
+          npx firebase-tools deploy --only firestore:rules,firestore:indexes --project nitboard-57de2
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
