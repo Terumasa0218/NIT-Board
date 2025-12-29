@@ -65,7 +65,18 @@ A student-only knowledge-sharing bulletin board for Nagoya Institute of Technolo
    - Project ID: `nitboard-57de2`
    - Hosting URL: `https://nitboard-57de2.web.app/`
 
-   Create a local environment file for development by copying `.env.example` to `.env.local` and filling in the required `VITE_*` values. The `.env.local` file is ignored by Git and should not be committed.
+   Create a local environment file for development by copying `.env.local.example` to `.env.local` and filling in the required `VITE_*` values. The `.env.local` file is ignored by Git and should not be committed.
+
+   - **Run with real Firebase**
+     1. Copy `.env.local.example` → `.env.local`
+     2. Fill in the Firebase config values from the Firebase console
+     3. `npm run dev`
+
+   - **Run with Firebase emulators**
+     1. Copy `.env.local.example` → `.env.local`
+     2. Set `VITE_USE_FIREBASE_EMULATORS=true`
+     3. Start emulators: `npx firebase-tools emulators:start --only firestore,auth`
+     4. `npm run dev`
 
    GitHub Actions builds require the same `VITE_*` variables to be registered as repository Secrets with the exact names below:
    - `VITE_FIREBASE_API_KEY`
