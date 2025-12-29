@@ -244,6 +244,7 @@ export default function BoardsPage() {
     !!selectedDepartmentId && !!userProfile && selectedDepartmentId !== profileDepartmentId
   const canResetToMyDepartment = !!profileDepartmentId && profileDepartmentId !== selectedDepartmentId
   const showProfileGuidance = !profileDepartmentId
+  const showNicknameGuidance = !!userProfile && !userProfile.nickname?.trim()
 
   if (isLoading) {
     return (
@@ -312,6 +313,14 @@ export default function BoardsPage() {
             <p className="text-sm text-muted-foreground">
               プロフィールに学科が未設定です。学科を選択すると、このページから掲示板を閲覧できます。
             </p>
+          )}
+          {showNicknameGuidance && (
+            <div className="rounded-md border border-muted p-4 bg-card text-sm text-foreground flex items-center justify-between flex-wrap gap-2">
+              <span>表示名が未設定です。プロフィールで設定すると回答や投稿で信頼性が高まります。</span>
+              <Link to="/profile" className="btn btn-outline btn-sm">
+                プロフィールを設定
+              </Link>
+            </div>
           )}
 
           {canSaveDepartmentToProfile && (
