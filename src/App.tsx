@@ -6,6 +6,7 @@ import Layout from '@/components/Layout'
 import AuthGuard from '@/components/AuthGuard'
 import LoadingScreen from '@/components/LoadingScreen'
 import { useAppStore } from '@/stores/appStore'
+import { firebaseConfigStatus } from '@/config/firebaseConfig'
 
 // Lazy load page components
 const LoginPage = lazy(() => import('@/pages/LoginPage'))
@@ -27,6 +28,8 @@ function App() {
   const { user, loading, initializeAuth } = useAuthStore()
   const { setPreferredLocale } = useAppStore()
   const { changeLanguage } = useI18n()
+  const showFirebaseSetupNotice =
+    import.meta.env.DEV && !firebaseConfigStatus.isConfigured && !firebaseConfigStatus.useEmulators
 
   // Initialize auth only once on mount
   useEffect(() => {
@@ -48,6 +51,35 @@ function App() {
       setPreferredLocale(user.preferredLocale)
     }
   }, [user?.preferredLocale, changeLanguage, setPreferredLocale])
+
+  if (showFirebaseSetupNotice) {
+    return (
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-6">
+        <div className="max-w-2xl w-full space-y-4 border border-border rounded-lg bg-card p-6 shadow-sm">
+          <h1 className="text-xl font-semibold">Firebase 設定が未完了です</h1>
+          <p className="text-sm text-muted-foreground">
+            ローカル開発では <code className="px-1 py-0.5 bg-muted rounded">.env.local</code> に Firebase 設定を追加するか、
+            エミュレータを利用してください。
+          </p>
+          <div className="text-sm text-muted-foreground space-y-2">
+            <p>Missing: {firebaseConfigStatus.missingEnvVars.join(', ')}</p>
+            <ol className="list-decimal list-inside space-y-1">
+              <li>
+                <code className="px-1 py-0.5 bg-muted rounded">.env.local.example</code> を
+                <code className="px-1 py-0.5 bg-muted rounded">.env.local</code> にコピー
+              </li>
+              <li>実 Firebase で動かす場合はコンソールの値を入力</li>
+              <li>
+                エミュレータを使う場合は
+                <code className="px-1 py-0.5 bg-muted rounded">VITE_USE_FIREBASE_EMULATORS=true</code> を設定し、
+                <code className="px-1 py-0.5 bg-muted rounded">firebase emulators:start --only firestore,auth</code> を実行
+              </li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   if (loading) {
     return <LoadingScreen />
