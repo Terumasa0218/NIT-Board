@@ -19,6 +19,8 @@ interface UserStats {
   bestAnswers: number
 }
 
+const BIO_MAX_LENGTH = 160
+
 export default function ProfilePage() {
   const { userId } = useParams<{ userId?: string }>()
   const navigate = useNavigate()
@@ -38,6 +40,7 @@ export default function ProfilePage() {
   const [circles, setCircles] = useState('')
   const [bio, setBio] = useState('')
   const [avatarUrl, setAvatarUrl] = useState('')
+  const [avatarPreviewOk, setAvatarPreviewOk] = useState(true)
 
   const isOwnProfile = useMemo(() => {
     if (userId) {
@@ -59,6 +62,24 @@ export default function ProfilePage() {
   const isMutual = useMemo(() => {
     return isMutualFollow(userProfile, profile)
   }, [profile, userProfile])
+
+  const trimmedNickname = nickname.trim()
+  const trimmedAvatarUrl = avatarUrl.trim()
+  const remainingBio = BIO_MAX_LENGTH - bio.length
+  const isNicknameMissing = !trimmedNickname
+  const isBioOverLimit = remainingBio < 0
+
+  const isAvatarUrlValid = useMemo(() => {
+    if (!trimmedAvatarUrl) return true
+    try {
+      const parsed = new URL(trimmedAvatarUrl)
+      return parsed.protocol === 'http:' || parsed.protocol === 'https:'
+    } catch {
+      return false
+    }
+  }, [trimmedAvatarUrl])
+
+  const canSaveProfile = !isNicknameMissing && !isBioOverLimit && isAvatarUrlValid
 
   const profileDepartmentLabel = useMemo(() => {
     if (!profile?.departmentId) return ''
@@ -117,9 +138,25 @@ export default function ProfilePage() {
     loadStats()
   }, [targetUserId])
 
+  useEffect(() => {
+    setAvatarPreviewOk(true)
+  }, [trimmedAvatarUrl])
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!isOwnProfile || !profile) return
+    if (isNicknameMissing) {
+      toast.error('表示名を設定してください')
+      return
+    }
+    if (isBioOverLimit) {
+      toast.error(`自己紹介は${BIO_MAX_LENGTH}文字以内で入力してください`)
+      return
+    }
+    if (!isAvatarUrlValid) {
+      toast.error('アイコンURLはhttp/httpsのURLを入力してください')
+      return
+    }
     setSaving(true)
     try {
       const circlesArray = circles
@@ -127,18 +164,30 @@ export default function ProfilePage() {
         .map((c) => c.trim())
         .filter(Boolean)
       await updateProfile({
-        nickname,
+        nickname: trimmedNickname,
         departmentId: departmentId || undefined,
         grade,
         circles: circlesArray,
         bio,
-        avatarUrl: avatarUrl || undefined,
+        avatarUrl: trimmedAvatarUrl || undefined,
       })
       await loadProfile()
       toast.success('プロフィールを更新しました')
     } catch (error) {
       console.error(error)
-      toast.error('プロフィールの更新に失敗しました')
+      const errorCode = (error as { code?: string; message?: string }).code
+      const errorMessage = (error as { code?: string; message?: string }).message
+      let message = 'プロフィールの更新に失敗しました'
+      if (errorCode === 'permission-denied') {
+        message = '権限がありません。ログインし直してください'
+      } else if (errorCode === 'unavailable') {
+        message = 'サーバーに接続できません。インターネット接続を確認してください'
+      } else if (errorCode === 'deadline-exceeded') {
+        message = 'リクエストがタイムアウトしました。再試行してください'
+      } else if (errorMessage === 'No Firebase user' || errorMessage === 'No user logged in') {
+        message = '認証情報が見つかりません。ログインし直してください'
+      }
+      toast.error(message)
     } finally {
       setSaving(false)
     }
@@ -285,15 +334,21 @@ export default function ProfilePage() {
             <h2 className="text-lg font-semibold">プロフィールを編集</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-1">
-            <label className="text-sm text-muted-foreground">ニックネーム</label>
-            <input
-              type="text"
-              value={nickname}
+            <div className="space-y-1">
+              <label className="text-sm text-muted-foreground">ニックネーム</label>
+              <input
+                type="text"
+                value={nickname}
                 onChange={(e) => setNickname(e.target.value)}
                 className="input w-full"
                 required
               />
+              {isNicknameMissing && (
+                <p className="text-xs text-destructive">表示名を設定してください。</p>
+              )}
+              {!isNicknameMissing && (
+                <p className="text-xs text-muted-foreground">回答や投稿に表示される名前です。</p>
+              )}
             </div>
             <div className="space-y-1">
               <label className="text-sm text-muted-foreground">学科</label>
@@ -329,20 +384,46 @@ export default function ProfilePage() {
                 className="input w-full"
                 placeholder="https://example.com/avatar.png"
               />
+              {!isAvatarUrlValid && (
+                <p className="text-xs text-destructive">http/httpsのURLを入力してください。</p>
+              )}
             </div>
             <div className="space-y-1 md:col-span-2">
-              <label className="text-sm text-muted-foreground">自己紹介</label>
+              <div className="flex items-center justify-between">
+                <label className="text-sm text-muted-foreground">自己紹介</label>
+                <span className={`text-xs ${isBioOverLimit ? 'text-destructive' : 'text-muted-foreground'}`}>
+                  残り {Math.max(remainingBio, 0)} 文字
+                </span>
+              </div>
               <textarea
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
                 className="textarea w-full"
                 rows={4}
                 placeholder="自己紹介を入力してください"
+                maxLength={BIO_MAX_LENGTH}
               />
+            </div>
+            <div className="space-y-1">
+              <label className="text-sm text-muted-foreground">アイコンプレビュー</label>
+              <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center overflow-hidden border border-border">
+                {isAvatarUrlValid && trimmedAvatarUrl && avatarPreviewOk ? (
+                  <img
+                    src={trimmedAvatarUrl}
+                    alt="アイコンプレビュー"
+                    className="w-full h-full object-cover"
+                    onError={() => setAvatarPreviewOk(false)}
+                    onLoad={() => setAvatarPreviewOk(true)}
+                  />
+                ) : (
+                  <UserIcon className="h-8 w-8 text-muted-foreground" />
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">URLが空/不正な場合はプレースホルダを表示します。</p>
             </div>
           </div>
           <div className="flex justify-end">
-            <button type="submit" className="btn btn-primary flex items-center gap-2" disabled={saving}>
+            <button type="submit" className="btn btn-primary flex items-center gap-2" disabled={saving || !canSaveProfile}>
               {saving && <Loader2 className="h-4 w-4 animate-spin" />} 保存
             </button>
           </div>
