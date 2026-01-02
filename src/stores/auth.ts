@@ -230,9 +230,10 @@ export const useAuthStore = create<AuthStore>()(
         }
 
         try {
-          await ensureUserRecord(firebaseUser)
-          await updateUserProfileRepo(user.id, updates)
-          const refreshed = await getUserById(user.id)
+          const ensuredUser = await ensureUserRecord(firebaseUser)
+          const targetUserId = ensuredUser.id ?? firebaseUser.uid
+          await updateUserProfileRepo(targetUserId, updates)
+          const refreshed = await getUserById(targetUserId)
           if (refreshed) {
             set({ user: refreshed, userProfile: refreshed })
           }
