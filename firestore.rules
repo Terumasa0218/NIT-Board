@@ -16,8 +16,8 @@ service cloud.firestore {
     // Users collection (deployment verification comment)
     match /users/{userId} {
       allow read: if isSignedIn();
-      allow create: if isSignedIn() && request.auth.uid == request.resource.data.id;
-      allow update: if isOwner(resource.data.id) || isAdmin();
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isOwner(userId) || isAdmin();
       allow delete: if isAdmin();
     }
 
