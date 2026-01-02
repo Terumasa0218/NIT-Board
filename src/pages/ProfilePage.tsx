@@ -174,12 +174,14 @@ export default function ProfilePage() {
       await loadProfile()
       toast.success('プロフィールを更新しました')
     } catch (error) {
-      console.error(error)
       const errorCode = (error as { code?: string; message?: string }).code
       const errorMessage = (error as { code?: string; message?: string }).message
+      console.error('Profile update failed', { code: errorCode, message: errorMessage, error })
       let message = 'プロフィールの更新に失敗しました'
       if (errorCode === 'permission-denied') {
         message = '権限がありません。ログインし直してください'
+      } else if (errorCode === 'unauthenticated') {
+        message = '認証情報が見つかりません。ログインし直してください'
       } else if (errorCode === 'unavailable') {
         message = 'サーバーに接続できません。インターネット接続を確認してください'
       } else if (errorCode === 'deadline-exceeded') {

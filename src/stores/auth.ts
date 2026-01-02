@@ -216,9 +216,21 @@ export const useAuthStore = create<AuthStore>()(
 
       updateProfile: async (updates: Partial<User>) => {
         const { user } = get()
-        if (!user) throw new Error('No user logged in')
+        if (!user) {
+          const error = new Error('No user logged in') as Error & { code?: string }
+          error.code = 'unauthenticated'
+          throw error
+        }
+
+        const firebaseUser = auth.currentUser
+        if (!firebaseUser) {
+          const error = new Error('No Firebase user') as Error & { code?: string }
+          error.code = 'unauthenticated'
+          throw error
+        }
 
         try {
+          await ensureUserRecord(firebaseUser)
           await updateUserProfileRepo(user.id, updates)
           const refreshed = await getUserById(user.id)
           if (refreshed) {
