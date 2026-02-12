@@ -4,7 +4,12 @@ import { useI18n } from '@/utils/i18n'
 import { Search, Plus, MessageSquare, Clock, TrendingUp } from 'lucide-react'
 import type { Board } from '@/types'
 import { listBoardsByTopic } from '@/repositories/boardsRepository'
-import { DEPARTMENTS, getActiveTopics } from '@/constants/departments'
+import {
+  DEPARTMENTS,
+  getActiveTopics,
+  getTopicQueryIds,
+  normalizeTopicId,
+} from '@/constants/departments'
 import { useAuthStore } from '@/stores/auth'
 
 type SortType = 'latest' | 'popular' | 'unanswered'
@@ -29,9 +34,12 @@ export default function BoardsPage() {
     [],
   )
 
-  const rawDepartmentId = searchParams.get('dept') || undefined
+  const rawDeptParam = searchParams.get('dept') || undefined
+  const legacyDepartmentId = searchParams.get('department') || undefined
+  const rawDepartmentId = rawDeptParam ?? legacyDepartmentId
   const selectedDepartmentId = isValidDepartmentId(rawDepartmentId) ? rawDepartmentId : undefined
-  const selectedTopicId = searchParams.get('topic') || undefined
+  const rawTopicId = searchParams.get('topic') || undefined
+  const selectedTopicId = normalizeTopicId(rawTopicId)
   const profileDepartmentId = useMemo(() => {
     const deptId = userProfile?.departmentId ?? userProfile?.department
     return isValidDepartmentId(deptId) ? deptId : undefined
@@ -66,6 +74,7 @@ export default function BoardsPage() {
           params.delete('dept')
         }
       }
+      params.delete('department')
       if (updates.topic !== undefined) {
         if (updates.topic) {
           params.set('topic', updates.topic)
@@ -89,6 +98,15 @@ export default function BoardsPage() {
   }, [isValidDepartmentId])
 
   useEffect(() => {
+    if (!rawDeptParam && legacyDepartmentId) {
+      if (isValidDepartmentId(legacyDepartmentId)) {
+        updateSearchParams({ dept: legacyDepartmentId }, { replace: true })
+      } else {
+        updateSearchParams({ dept: null, topic: null }, { replace: true })
+      }
+      return
+    }
+
     if (!selectedDepartmentId && rawDepartmentId && !isValidDepartmentId(rawDepartmentId)) {
       updateSearchParams({ dept: null, topic: null }, { replace: true })
       return
@@ -99,7 +117,15 @@ export default function BoardsPage() {
       updateSearchParams({ dept: resolvedDepartmentId, topic: null }, { replace: true })
       return
     }
-  }, [isValidDepartmentId, rawDepartmentId, resolvedDepartmentId, selectedDepartmentId, updateSearchParams])
+  }, [
+    isValidDepartmentId,
+    legacyDepartmentId,
+    rawDepartmentId,
+    rawDeptParam,
+    resolvedDepartmentId,
+    selectedDepartmentId,
+    updateSearchParams,
+  ])
 
   useEffect(() => {
     if (!selectedDepartmentId) return
@@ -112,10 +138,22 @@ export default function BoardsPage() {
   }, [selectedDepartmentId])
 
   useEffect(() => {
-    if (selectedTopicId && !currentTopic) {
+    if (!rawTopicId) return
+
+    if (!selectedTopicId) {
+      updateSearchParams({ topic: null }, { replace: true })
+      return
+    }
+
+    if (rawTopicId !== selectedTopicId) {
+      updateSearchParams({ topic: selectedTopicId }, { replace: true })
+      return
+    }
+
+    if (!currentTopic) {
       updateSearchParams({ topic: null }, { replace: true })
     }
-  }, [selectedTopicId, currentTopic, updateSearchParams])
+  }, [rawTopicId, selectedTopicId, currentTopic, updateSearchParams])
 
   useEffect(() => {
     let isMounted = true
@@ -127,9 +165,13 @@ export default function BoardsPage() {
       }
       setIsLoading(true)
       try {
-        const results = await listBoardsByTopic(selectedTopicId)
+        const topicQueryIds = getTopicQueryIds(selectedTopicId)
+        const resultSets = await Promise.all(topicQueryIds.map((topicId) => listBoardsByTopic(topicId)))
+        const mergedBoards = Array.from(
+          new Map(resultSets.flat().map((board) => [board.id, board])).values(),
+        )
         if (isMounted) {
-          setBoards(results)
+          setBoards(mergedBoards)
         }
       } catch (error) {
         console.error('Failed to fetch boards', error)

@@ -138,6 +138,16 @@ export const TOPICS: Topic[] = [
   },
 ]
 
+const TOPIC_ID_ALIAS_MAP: Record<string, string> = {
+  graduate: 'graduate-exam',
+  graduate_exam: 'graduate-exam',
+  graduateexam: 'graduate-exam',
+}
+
+const TOPIC_QUERY_ALIASES: Record<string, string[]> = {
+  'graduate-exam': ['graduate'],
+}
+
 export const getDepartmentsByProgram = (programType: Department['programType']) => {
   return DEPARTMENTS.filter(dept => dept.programType === programType)
 }
@@ -148,6 +158,22 @@ export const getDepartmentById = (id: string) => {
 
 export const getTopicBySlug = (slug: string) => {
   return TOPICS.find(topic => topic.slug === slug)
+}
+
+export const normalizeTopicId = (input?: string | null): string | undefined => {
+  if (!input) return undefined
+  const trimmed = input.trim()
+  if (!trimmed) return undefined
+
+  const canonical = TOPIC_ID_ALIAS_MAP[trimmed] ?? trimmed
+  return TOPICS.some(topic => topic.id === canonical) ? canonical : undefined
+}
+
+export const getTopicQueryIds = (input?: string | null): string[] => {
+  const canonicalTopicId = normalizeTopicId(input)
+  if (!canonicalTopicId) return []
+
+  return [canonicalTopicId, ...(TOPIC_QUERY_ALIASES[canonicalTopicId] ?? [])]
 }
 
 export const getActiveTopics = () => {
