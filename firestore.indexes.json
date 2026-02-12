@@ -75,6 +75,17 @@
         { "fieldPath": "chatId", "mode": "ASCENDING" },
         { "fieldPath": "createdAt", "mode": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "boards",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "universityId", "mode": "ASCENDING" },
+        { "fieldPath": "departmentId", "mode": "ASCENDING" },
+        { "fieldPath": "year", "mode": "ASCENDING" },
+        { "fieldPath": "topicId", "mode": "ASCENDING" },
+        { "fieldPath": "createdAt", "mode": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []
