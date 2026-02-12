@@ -18,6 +18,7 @@ import {
 import { db } from '@/firebase'
 import type { Board } from '@/types'
 import { DEFAULT_UNIVERSITY_ID } from '@/constants/university'
+import { getTopicQueryIds } from '@/constants/departments'
 
 const boardsCollection = collection(db, 'boards')
 
@@ -44,6 +45,8 @@ const toBoard = (snapshot: QueryDocumentSnapshot<DocumentData> | DocumentSnapsho
     id: snapshot.id,
     universityId: data.universityId || DEFAULT_UNIVERSITY_ID,
     topicId: data.topicId,
+    departmentId: typeof data.departmentId === 'string' ? data.departmentId : undefined,
+    year: typeof data.year === 'number' ? data.year : undefined,
     title: data.title,
     description: data.description,
     boardType: data.boardType || 'qa',
@@ -96,6 +99,62 @@ export const listBoardsByTopic = async (topicId: string, universityId = DEFAULT_
   return listBoards({ topicId, universityId, orderByField: 'createdAt', orderDirection: 'desc' })
 }
 
+export const listBoardsByDeptYearTopic = async (input: {
+  universityId: string
+  departmentId: string
+  year: number
+  topicId: string
+}): Promise<Board[]> => {
+  const constraints: QueryConstraint[] = [
+    where('universityId', '==', input.universityId),
+    where('departmentId', '==', input.departmentId),
+    where('year', '==', input.year),
+    where('topicId', '==', input.topicId),
+    orderBy('createdAt', 'desc'),
+  ]
+
+  const boardsQuery = query(boardsCollection, ...constraints)
+  const snapshot = await getDocs(boardsQuery)
+  return snapshot.docs.map((docSnapshot) => toBoard(docSnapshot))
+}
+
+export const listBoardsByDeptYearTopicWithFallback = async (input: {
+  universityId: string
+  departmentId: string
+  year: number
+  topicId: string
+}): Promise<Board[]> => {
+  const topicQueryIds = getTopicQueryIds(input.topicId)
+  const primaryResults = await Promise.all(
+    topicQueryIds.map((topicId) =>
+      listBoardsByDeptYearTopic({
+        universityId: input.universityId,
+        departmentId: input.departmentId,
+        year: input.year,
+        topicId,
+      }),
+    ),
+  )
+
+  const fallbackResults = await Promise.all(
+    topicQueryIds.map(async (topicId) => {
+      const legacyQuery = query(
+        boardsCollection,
+        where('universityId', '==', input.universityId),
+        where('topicId', '==', topicId),
+        orderBy('createdAt', 'desc'),
+      )
+      const snapshot = await getDocs(legacyQuery)
+      return snapshot.docs.map((docSnapshot) => toBoard(docSnapshot))
+    }),
+  )
+
+  const mergedBoards = [...primaryResults.flat(), ...fallbackResults.flat()]
+  const uniqueBoards = Array.from(new Map(mergedBoards.map((board) => [board.id, board])).values())
+
+  return uniqueBoards.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+}
+
 export const listEventBoards = async (universityId: string): Promise<Board[]> => {
   return listBoards({
     universityId,
@@ -117,6 +176,8 @@ export const getBoard = async (boardId: string): Promise<Board | null> => {
 export const createBoard = async (input: {
   title: string
   topicId: string
+  departmentId: string
+  year: number
   createdBy: string
   universityId: string
   description?: string
@@ -134,6 +195,8 @@ export const createBoard = async (input: {
     topicId: input.topicId,
     createdBy: input.createdBy,
     universityId: input.universityId || DEFAULT_UNIVERSITY_ID,
+    departmentId: input.departmentId,
+    year: input.year,
     description: input.description ?? '',
     boardType: input.boardType ?? 'qa',
     eventStartAt: input.eventStartAt ? Timestamp.fromDate(input.eventStartAt) : null,

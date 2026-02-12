@@ -5,7 +5,7 @@ import { useI18n } from '@/utils/i18n'
 import { createBoard } from '@/repositories/boardsRepository'
 import { useAuthStore } from '@/stores/auth'
 import { useAppStore } from '@/stores/appStore'
-import { getActiveTopics, normalizeTopicId } from '@/constants/departments'
+import { DEPARTMENTS, getActiveTopics, normalizeTopicId } from '@/constants/departments'
 
 const organizerTypeOptions = [
   { value: 'circle', label: 'サークル' },
@@ -24,6 +24,8 @@ export default function CreateBoardPage() {
   const [boardType, setBoardType] = useState<'qa' | 'event'>('qa')
   const [title, setTitle] = useState('')
   const [topicId, setTopicId] = useState(topics[0]?.id ?? '')
+  const [departmentId, setDepartmentId] = useState('')
+  const [year, setYear] = useState<number | ''>('')
   const [description, setDescription] = useState('')
   const [eventStartAt, setEventStartAt] = useState('')
   const [eventEndAt, setEventEndAt] = useState('')
@@ -55,6 +57,16 @@ export default function CreateBoardPage() {
 
     if (!title.trim()) {
       setError('タイトルを入力してください')
+      return
+    }
+
+    if (!departmentId) {
+      setError('学科を選択してください')
+      return
+    }
+
+    if (!year || year < 1 || year > 4) {
+      setError('学年を選択してください')
       return
     }
 
@@ -96,6 +108,8 @@ export default function CreateBoardPage() {
       const created = await createBoard({
         title: title.trim(),
         topicId: canonicalTopicId,
+        departmentId,
+        year,
         description: description.trim(),
         boardType,
         createdBy: user.id,
@@ -155,6 +169,42 @@ export default function CreateBoardPage() {
               placeholder="例: オープンキャンパスの案内"
               required
             />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <label className="block text-sm font-medium text-muted-foreground">学科</label>
+              <select
+                value={departmentId}
+                onChange={(e) => setDepartmentId(e.target.value)}
+                className="input w-full"
+                required
+              >
+                <option value="">学科を選択してください</option>
+                {DEPARTMENTS.map((dept) => (
+                  <option key={dept.id} value={dept.id}>
+                    {currentLocale === 'en' ? dept.nameEn : dept.nameJa}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-1">
+              <label className="block text-sm font-medium text-muted-foreground">学年</label>
+              <select
+                value={year}
+                onChange={(e) => setYear(e.target.value ? Number(e.target.value) : '')}
+                className="input w-full"
+                required
+              >
+                <option value="">学年を選択してください</option>
+                {[1, 2, 3, 4].map((yearOption) => (
+                  <option key={yearOption} value={yearOption}>
+                    {yearOption}年
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className="space-y-1">
