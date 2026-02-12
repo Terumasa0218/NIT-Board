@@ -1,21 +1,11 @@
-import { useState, type FormEvent } from 'react'
+import { useState, type FormEvent, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Calendar, Link as LinkIcon, MapPin, User as UserIcon } from 'lucide-react'
 import { useI18n } from '@/utils/i18n'
 import { createBoard } from '@/repositories/boardsRepository'
 import { useAuthStore } from '@/stores/auth'
 import { useAppStore } from '@/stores/appStore'
-
-const TOPICS = [
-  { id: 'assignments', name: '授業課題' },
-  { id: 'lab-work', name: '実験課題' },
-  { id: 'midterm', name: '中間試験' },
-  { id: 'final', name: '期末試験' },
-  { id: 'graduate-exam', name: '大学院試験' },
-  { id: 'job-hunting', name: '就職活動' },
-  { id: 'events', name: 'イベント' },
-  { id: 'other', name: 'その他' },
-]
+import { getActiveTopics, normalizeTopicId } from '@/constants/departments'
 
 const organizerTypeOptions = [
   { value: 'circle', label: 'サークル' },
@@ -25,14 +15,15 @@ const organizerTypeOptions = [
 ]
 
 export default function CreateBoardPage() {
-  const { t } = useI18n()
+  const { t, currentLocale } = useI18n()
   const navigate = useNavigate()
   const { user } = useAuthStore()
   const { selectedUniversityId } = useAppStore()
+  const topics = useMemo(() => getActiveTopics(), [])
 
   const [boardType, setBoardType] = useState<'qa' | 'event'>('qa')
   const [title, setTitle] = useState('')
-  const [topicId, setTopicId] = useState(TOPICS[0]?.id ?? '')
+  const [topicId, setTopicId] = useState(topics[0]?.id ?? '')
   const [description, setDescription] = useState('')
   const [eventStartAt, setEventStartAt] = useState('')
   const [eventEndAt, setEventEndAt] = useState('')
@@ -67,7 +58,8 @@ export default function CreateBoardPage() {
       return
     }
 
-    if (!topicId) {
+    const canonicalTopicId = normalizeTopicId(topicId)
+    if (!canonicalTopicId) {
       setError('トピックを選択してください')
       return
     }
@@ -103,7 +95,7 @@ export default function CreateBoardPage() {
     try {
       const created = await createBoard({
         title: title.trim(),
-        topicId,
+        topicId: canonicalTopicId,
         description: description.trim(),
         boardType,
         createdBy: user.id,
@@ -172,9 +164,9 @@ export default function CreateBoardPage() {
               onChange={(e) => setTopicId(e.target.value)}
               className="input w-full"
             >
-              {TOPICS.map((topic) => (
+              {topics.map((topic) => (
                 <option key={topic.id} value={topic.id}>
-                  {topic.name}
+                  {currentLocale === 'en' ? topic.nameEn : topic.nameJa}
                 </option>
               ))}
             </select>
