@@ -3,17 +3,27 @@ import { useSearchParams, Link } from 'react-router-dom'
 import { useI18n } from '@/utils/i18n'
 import { Search, Plus, MessageSquare, Clock, TrendingUp } from 'lucide-react'
 import type { Board } from '@/types'
-import { listBoardsByTopic } from '@/repositories/boardsRepository'
+import { listBoardsByDeptYearTopicWithFallback } from '@/repositories/boardsRepository'
 import {
   DEPARTMENTS,
   getActiveTopics,
-  getTopicQueryIds,
   normalizeTopicId,
 } from '@/constants/departments'
 import { useAuthStore } from '@/stores/auth'
+import { DEFAULT_UNIVERSITY_ID } from '@/constants/university'
 
 type SortType = 'latest' | 'popular' | 'unanswered'
 const LAST_SELECTED_DEPT_KEY = 'nitboard:lastSelectedDepartmentId'
+const MIN_YEAR = 1
+const MAX_YEAR = 4
+
+const normalizeYearParam = (value?: string | null): number => {
+  const parsed = Number.parseInt(value ?? '', 10)
+  if (Number.isNaN(parsed)) return MIN_YEAR
+  if (parsed < MIN_YEAR) return MIN_YEAR
+  if (parsed > MAX_YEAR) return MAX_YEAR
+  return parsed
+}
 
 export default function BoardsPage() {
   const { t, currentLocale } = useI18n()
@@ -40,6 +50,8 @@ export default function BoardsPage() {
   const selectedDepartmentId = isValidDepartmentId(rawDepartmentId) ? rawDepartmentId : undefined
   const rawTopicId = searchParams.get('topic') || undefined
   const selectedTopicId = normalizeTopicId(rawTopicId)
+  const rawYearParam = searchParams.get('year')
+  const selectedYear = normalizeYearParam(rawYearParam)
   const profileDepartmentId = useMemo(() => {
     const deptId = userProfile?.departmentId ?? userProfile?.department
     return isValidDepartmentId(deptId) ? deptId : undefined
@@ -65,7 +77,7 @@ export default function BoardsPage() {
   )
 
   const updateSearchParams = useCallback(
-    (updates: { dept?: string | null; topic?: string | null }, options?: { replace?: boolean }) => {
+    (updates: { dept?: string | null; topic?: string | null; year?: number | null }, options?: { replace?: boolean }) => {
       const params = new URLSearchParams(searchParamsString)
       if (updates.dept !== undefined) {
         if (updates.dept) {
@@ -80,6 +92,13 @@ export default function BoardsPage() {
           params.set('topic', updates.topic)
         } else {
           params.delete('topic')
+        }
+      }
+      if (updates.year !== undefined) {
+        if (typeof updates.year === 'number') {
+          params.set('year', String(normalizeYearParam(String(updates.year))))
+        } else {
+          params.delete('year')
         }
       }
       setSearchParams(params, options)
@@ -102,19 +121,19 @@ export default function BoardsPage() {
       if (isValidDepartmentId(legacyDepartmentId)) {
         updateSearchParams({ dept: legacyDepartmentId }, { replace: true })
       } else {
-        updateSearchParams({ dept: null, topic: null }, { replace: true })
+        updateSearchParams({ dept: null, topic: null, year: selectedYear }, { replace: true })
       }
       return
     }
 
     if (!selectedDepartmentId && rawDepartmentId && !isValidDepartmentId(rawDepartmentId)) {
-      updateSearchParams({ dept: null, topic: null }, { replace: true })
+      updateSearchParams({ dept: null, topic: null, year: selectedYear }, { replace: true })
       return
     }
 
     if (!selectedDepartmentId && resolvedDepartmentId) {
       setSearchQuery('')
-      updateSearchParams({ dept: resolvedDepartmentId, topic: null }, { replace: true })
+      updateSearchParams({ dept: resolvedDepartmentId, topic: null, year: selectedYear }, { replace: true })
       return
     }
   }, [
@@ -124,6 +143,7 @@ export default function BoardsPage() {
     rawDeptParam,
     resolvedDepartmentId,
     selectedDepartmentId,
+    selectedYear,
     updateSearchParams,
   ])
 
@@ -156,6 +176,13 @@ export default function BoardsPage() {
   }, [rawTopicId, selectedTopicId, currentTopic, updateSearchParams])
 
   useEffect(() => {
+    const normalizedYear = normalizeYearParam(rawYearParam)
+    if (rawYearParam !== String(normalizedYear)) {
+      updateSearchParams({ year: normalizedYear }, { replace: true })
+    }
+  }, [rawYearParam, updateSearchParams])
+
+  useEffect(() => {
     let isMounted = true
     const fetchBoards = async () => {
       if (!selectedDepartmentId || !selectedTopicId || !currentTopic) {
@@ -165,11 +192,12 @@ export default function BoardsPage() {
       }
       setIsLoading(true)
       try {
-        const topicQueryIds = getTopicQueryIds(selectedTopicId)
-        const resultSets = await Promise.all(topicQueryIds.map((topicId) => listBoardsByTopic(topicId)))
-        const mergedBoards = Array.from(
-          new Map(resultSets.flat().map((board) => [board.id, board])).values(),
-        )
+        const mergedBoards = await listBoardsByDeptYearTopicWithFallback({
+          universityId: userProfile?.universityId || DEFAULT_UNIVERSITY_ID,
+          departmentId: selectedDepartmentId,
+          year: selectedYear,
+          topicId: selectedTopicId,
+        })
         if (isMounted) {
           setBoards(mergedBoards)
         }
@@ -190,7 +218,7 @@ export default function BoardsPage() {
     return () => {
       isMounted = false
     }
-  }, [selectedDepartmentId, selectedTopicId, currentTopic])
+  }, [selectedDepartmentId, selectedTopicId, currentTopic, selectedYear, userProfile?.universityId])
 
   useEffect(() => {
     if (!selectedDepartmentId) return
@@ -198,8 +226,8 @@ export default function BoardsPage() {
     const firstAvailableTopic = availableTopics[0]
     if (!firstAvailableTopic) return
     setSearchQuery('')
-    updateSearchParams({ topic: firstAvailableTopic.id }, { replace: true })
-  }, [availableTopics, currentTopic, selectedDepartmentId, selectedTopicId, updateSearchParams])
+    updateSearchParams({ topic: firstAvailableTopic.id, year: selectedYear }, { replace: true })
+  }, [availableTopics, currentTopic, selectedDepartmentId, selectedTopicId, selectedYear, updateSearchParams])
 
   const filteredBoards = useMemo(() => {
     let result = [...boards]
@@ -248,24 +276,24 @@ export default function BoardsPage() {
     (deptId: string) => {
       if (!deptId) return
       setSearchQuery('')
-      updateSearchParams({ dept: deptId, topic: null })
+      updateSearchParams({ dept: deptId, topic: null, year: selectedYear })
     },
-    [updateSearchParams],
+    [selectedYear, updateSearchParams],
   )
 
   const handleTopicSelect = useCallback(
     (topicId: string, options?: { replace?: boolean }) => {
       if (!topicId) return
       setSearchQuery('')
-      updateSearchParams({ topic: topicId }, options)
+      updateSearchParams({ topic: topicId, year: selectedYear }, options)
     },
-    [updateSearchParams],
+    [selectedYear, updateSearchParams],
   )
 
   const handleResetToMyDepartment = () => {
     if (!profileDepartmentId) return
     setSearchQuery('')
-    updateSearchParams({ dept: profileDepartmentId, topic: null }, { replace: true })
+    updateSearchParams({ dept: profileDepartmentId, topic: null, year: selectedYear }, { replace: true })
   }
 
   const handleSaveDepartmentToProfile = async () => {
@@ -388,6 +416,21 @@ export default function BoardsPage() {
               )}
             </div>
           )}
+
+          <div className="flex flex-col gap-2 md:flex-row md:items-center">
+            <span className="text-sm text-muted-foreground">学年</span>
+            <select
+              value={selectedYear}
+              onChange={(e) => updateSearchParams({ year: normalizeYearParam(e.target.value) })}
+              className="input w-full md:w-40"
+            >
+              {[1, 2, 3, 4].map((year) => (
+                <option key={year} value={year}>
+                  {year}年
+                </option>
+              ))}
+            </select>
+          </div>
 
           <div className="flex flex-wrap gap-2">
             {availableTopics.map((topic) => (

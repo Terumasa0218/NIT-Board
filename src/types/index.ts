@@ -38,6 +38,8 @@ export interface Topic {
 export interface Board {
   id: string
   universityId: string
+  departmentId?: string
+  year?: number
   topicId: string
   title: string
   description?: string

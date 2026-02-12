@@ -26,6 +26,7 @@ export default function TopicsPage() {
     if (departmentId) {
       params.set('dept', departmentId)
     }
+    params.set('year', '1')
     params.set('topic', canonicalTopicId)
     navigate(`/boards?${params.toString()}`)
   }
