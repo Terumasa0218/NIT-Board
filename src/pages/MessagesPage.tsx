@@ -127,7 +127,7 @@ export default function MessagesPage() {
 
   useEffect(() => {
     fetchChats()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [currentUserId, selectedUniversityId, routeChatId])
 
   useEffect(() => {

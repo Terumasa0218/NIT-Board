@@ -40,7 +40,7 @@ export default function CreateBoardPage() {
 
   const isValidUrl = (value: string) => {
     try {
-      // eslint-disable-next-line no-new
+       
       new URL(value)
       return true
     } catch {
