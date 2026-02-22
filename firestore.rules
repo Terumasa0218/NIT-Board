@@ -30,6 +30,36 @@ service cloud.firestore {
         && isValidSchoolYear(data.year);
     }
 
+    function hasKey(data, key) {
+      return data.keys().hasAny([key]);
+    }
+
+    function isValidBoardUpdate(oldData, newData) {
+      return newData.createdBy == oldData.createdBy
+        && newData.universityId == oldData.universityId
+        && (
+          (hasKey(oldData, 'departmentId')
+            && hasKey(newData, 'departmentId')
+            && isNonEmptyString(newData.departmentId))
+          || (!hasKey(oldData, 'departmentId')
+            && (!hasKey(newData, 'departmentId') || isNonEmptyString(newData.departmentId)))
+        )
+        && (
+          (hasKey(oldData, 'year')
+            && hasKey(newData, 'year')
+            && isValidSchoolYear(newData.year))
+          || (!hasKey(oldData, 'year')
+            && (!hasKey(newData, 'year') || isValidSchoolYear(newData.year)))
+        )
+        && (
+          (hasKey(oldData, 'topicId')
+            && hasKey(newData, 'topicId')
+            && isNonEmptyString(newData.topicId))
+          || (!hasKey(oldData, 'topicId')
+            && (!hasKey(newData, 'topicId') || isNonEmptyString(newData.topicId)))
+        );
+    }
+
     // Users collection (deployment verification comment)
     match /users/{userId} {
       allow read: if isSignedIn();
@@ -56,7 +86,9 @@ service cloud.firestore {
       allow create: if isSignedIn()
         && request.resource.data.createdBy == request.auth.uid
         && isValidBoardCreate(request.resource.data);
-      allow update, delete: if isOwner(resource.data.createdBy) || isAdmin();
+      allow update: if (isOwner(resource.data.createdBy) || isAdmin())
+        && isValidBoardUpdate(resource.data, request.resource.data);
+      allow delete: if isOwner(resource.data.createdBy) || isAdmin();
     }
 
     // Posts collection
