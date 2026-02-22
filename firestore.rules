@@ -13,6 +13,23 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userIdField;
     }
 
+    function isNonEmptyString(x) {
+      return x is string && x.size() > 0;
+    }
+
+    function isValidSchoolYear(y) {
+      return y is int && y >= 1 && y <= 4;
+    }
+
+    function isValidBoardCreate(data) {
+      return data.keys().hasAll(['createdBy', 'universityId', 'departmentId', 'year', 'topicId'])
+        && isNonEmptyString(data.createdBy)
+        && isNonEmptyString(data.universityId)
+        && isNonEmptyString(data.departmentId)
+        && isNonEmptyString(data.topicId)
+        && isValidSchoolYear(data.year);
+    }
+
     // Users collection (deployment verification comment)
     match /users/{userId} {
       allow read: if isSignedIn();
@@ -36,7 +53,9 @@ service cloud.firestore {
     // Boards collection
     match /boards/{boardId} {
       allow read: if isSignedIn();
-      allow create: if isSignedIn() && request.resource.data.createdBy == request.auth.uid;
+      allow create: if isSignedIn()
+        && request.resource.data.createdBy == request.auth.uid
+        && isValidBoardCreate(request.resource.data);
       allow update, delete: if isOwner(resource.data.createdBy) || isAdmin();
     }
 
