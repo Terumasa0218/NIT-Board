@@ -105,6 +105,7 @@ A student-only knowledge-sharing bulletin board for Nagoya Institute of Technolo
 - `npm run lint` - Run ESLint
 - `npm run lint:fix` - Fix ESLint issues
 - `npm run type-check` - Run TypeScript type checking
+- `npm run backfill:boards` - Run boards backfill utility (dry-run/apply)
 
 ## Project Structure
 
@@ -157,6 +158,50 @@ The application uses the existing Firebase project with the following services:
 - Event images: 10MB max, authenticated users
 - Archive images: 10MB max, authenticated users
 - Message images: 5MB max, chat participants
+
+
+## Legacy boards backfill script
+
+A safe utility script is available to detect and optionally patch legacy `boards` documents that are missing `departmentId` and/or `year`.
+
+### Safety behavior
+- Default mode is dry-run (`--dry-run` or no flag): scans and reports only.
+- Apply mode (`--apply`) writes **missing fields only** with Firestore `set(..., { merge: true })`.
+- Existing `departmentId` / `year` values are never overwritten.
+- Credentials are loaded via environment variables only (no secret file committed).
+
+### Required environment variables
+- `FIREBASE_PROJECT_ID` (required)
+- One of:
+  - `GOOGLE_APPLICATION_CREDENTIALS` (path to service account JSON)
+  - `SERVICE_ACCOUNT_JSON` (raw service account JSON string)
+- `DEFAULT_UNIVERSITY_ID` is fixed in app constants (`nit`) and only used in report fallback display.
+
+### Apply-only required variables
+To prevent accidental writes, apply mode requires:
+- `YEAR_DEFAULT` (number, e.g. `1`)
+- `DEPARTMENT_DEFAULT` (department ID to fill)
+
+### Runbook (must follow)
+1. Run dry-run first and inspect the summary/sample.
+2. Validate defaults (`YEAR_DEFAULT`, `DEPARTMENT_DEFAULT`) with your operations owner.
+3. Run apply mode.
+
+```bash
+# 1) Dry-run (recommended first step)
+npm run backfill:boards -- --dry-run
+
+# (Optional) increase sample size from default 20
+npm run backfill:boards -- --dry-run --sample-size=50
+
+# 2) Apply (explicit flag + required env)
+FIREBASE_PROJECT_ID=<your-project-id> \
+YEAR_DEFAULT=1 \
+DEPARTMENT_DEFAULT=<department-id> \
+npm run backfill:boards -- --apply
+```
+
+If credentials are missing, the script fails fast with an explicit error message explaining which environment variable to set.
 
 ## Deployment
 
