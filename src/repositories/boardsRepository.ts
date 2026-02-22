@@ -20,7 +20,26 @@ import type { Board } from '@/types'
 import { DEFAULT_UNIVERSITY_ID } from '@/constants/university'
 import { getTopicQueryIds } from '@/constants/departments'
 
-const boardsCollection = collection(db, 'boards')
+const getBoardsCollection = () => collection(db, 'boards')
+
+export type CreateBoardInput = {
+  title: string
+  topicId: string
+  departmentId: string
+  year: number
+  createdBy: string
+  universityId: string
+  description?: string
+  boardType?: 'qa' | 'event'
+  eventStartAt?: Date
+  eventEndAt?: Date
+  location?: string
+  organizerName?: string
+  organizerType?: 'circle' | 'student_group' | 'company' | 'other'
+  registrationUrl?: string
+}
+
+type BoardCreateNow = Date | ReturnType<typeof serverTimestamp>
 
 const toDate = (value: unknown): Date | undefined => {
   if (value instanceof Timestamp) return value.toDate()
@@ -89,7 +108,7 @@ export const listBoards = async (options: ListBoardsOptions): Promise<Board[]> =
 
   constraints.push(orderBy(orderByField, orderDirection))
 
-  const boardsQuery = query(boardsCollection, ...constraints)
+  const boardsQuery = query(getBoardsCollection(), ...constraints)
 
   const snapshot = await getDocs(boardsQuery)
   return snapshot.docs.map((docSnapshot) => toBoard(docSnapshot))
@@ -113,7 +132,7 @@ export const listBoardsByDeptYearTopic = async (input: {
     orderBy('createdAt', 'desc'),
   ]
 
-  const boardsQuery = query(boardsCollection, ...constraints)
+  const boardsQuery = query(getBoardsCollection(), ...constraints)
   const snapshot = await getDocs(boardsQuery)
   return snapshot.docs.map((docSnapshot) => toBoard(docSnapshot))
 }
@@ -139,7 +158,7 @@ export const listBoardsByDeptYearTopicWithFallback = async (input: {
   const fallbackResults = await Promise.all(
     topicQueryIds.map(async (topicId) => {
       const legacyQuery = query(
-        boardsCollection,
+        getBoardsCollection(),
         where('universityId', '==', input.universityId),
         where('topicId', '==', topicId),
         orderBy('createdAt', 'desc'),
@@ -149,10 +168,7 @@ export const listBoardsByDeptYearTopicWithFallback = async (input: {
     }),
   )
 
-  const mergedBoards = [...primaryResults.flat(), ...fallbackResults.flat()]
-  const uniqueBoards = Array.from(new Map(mergedBoards.map((board) => [board.id, board])).values())
-
-  return uniqueBoards.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+  return mergeAndDedupeBoards(primaryResults.flat(), fallbackResults.flat())
 }
 
 export const listEventBoards = async (universityId: string): Promise<Board[]> => {
@@ -165,7 +181,7 @@ export const listEventBoards = async (universityId: string): Promise<Board[]> =>
 }
 
 export const getBoard = async (boardId: string): Promise<Board | null> => {
-  const boardRef = doc(boardsCollection, boardId)
+  const boardRef = doc(getBoardsCollection(), boardId)
   const snapshot = await getDoc(boardRef)
   if (!snapshot.exists()) {
     return null
@@ -173,24 +189,10 @@ export const getBoard = async (boardId: string): Promise<Board | null> => {
   return toBoard(snapshot)
 }
 
-export const createBoard = async (input: {
-  title: string
-  topicId: string
-  departmentId: string
-  year: number
-  createdBy: string
-  universityId: string
-  description?: string
-  boardType?: 'qa' | 'event'
-  eventStartAt?: Date
-  eventEndAt?: Date
-  location?: string
-  organizerName?: string
-  organizerType?: 'circle' | 'student_group' | 'company' | 'other'
-  registrationUrl?: string
-}): Promise<Board> => {
-  const now = serverTimestamp()
-  const docRef = await addDoc(boardsCollection, {
+export const buildBoardCreateDoc = (input: CreateBoardInput, now: BoardCreateNow) => {
+  const yearCreated = now instanceof Date ? now.getFullYear() : new Date().getFullYear()
+
+  return {
     title: input.title,
     topicId: input.topicId,
     createdBy: input.createdBy,
@@ -207,18 +209,30 @@ export const createBoard = async (input: {
     registrationUrl: input.registrationUrl ?? null,
     postCount: 0,
     latestPostAt: null,
-    yearCreated: new Date().getFullYear(),
+    yearCreated,
     createdAt: now,
     updatedAt: now,
     bestAnswerPostId: null,
-  })
+  }
+}
+
+export const mergeAndDedupeBoards = (primary: Board[], fallback: Board[]): Board[] => {
+  const mergedBoards = [...primary, ...fallback]
+  const uniqueBoards = Array.from(new Map(mergedBoards.map((board) => [board.id, board])).values())
+
+  return uniqueBoards.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+}
+
+export const createBoard = async (input: CreateBoardInput): Promise<Board> => {
+  const now = serverTimestamp()
+  const docRef = await addDoc(getBoardsCollection(), buildBoardCreateDoc(input, now))
 
   const createdSnapshot = await getDoc(docRef)
   return toBoard(createdSnapshot)
 }
 
 export const setBestAnswer = async (boardId: string, postId: string | null): Promise<void> => {
-  const boardRef = doc(boardsCollection, boardId)
+  const boardRef = doc(getBoardsCollection(), boardId)
   await updateDoc(boardRef, {
     bestAnswerPostId: postId ?? null,
     updatedAt: serverTimestamp(),

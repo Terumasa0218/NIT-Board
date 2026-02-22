@@ -11,20 +11,10 @@ import {
 } from '@/constants/departments'
 import { useAuthStore } from '@/stores/auth'
 import { DEFAULT_UNIVERSITY_ID } from '@/constants/university'
+import { normalizeYearParam } from '@/utils/boardsUrl'
 
 type SortType = 'latest' | 'popular' | 'unanswered'
 const LAST_SELECTED_DEPT_KEY = 'nitboard:lastSelectedDepartmentId'
-const MIN_YEAR = 1
-const MAX_YEAR = 4
-
-const normalizeYearParam = (value?: string | null): number => {
-  const parsed = Number.parseInt(value ?? '', 10)
-  if (Number.isNaN(parsed)) return MIN_YEAR
-  if (parsed < MIN_YEAR) return MIN_YEAR
-  if (parsed > MAX_YEAR) return MAX_YEAR
-  return parsed
-}
-
 export default function BoardsPage() {
   const { t, currentLocale } = useI18n()
   const { userProfile, updateProfile } = useAuthStore()
