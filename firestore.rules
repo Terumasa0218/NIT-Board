@@ -64,9 +64,9 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn() && request.auth.uid == userId
-        && (request.auth.token.email.matches('.*@ict\.nitech\.ac\.jp$')
-          || request.auth.token.email.matches('.*@stn\.nitech\.ac\.jp$')
-          || request.auth.token.email.matches('.*@nitech\.ac\.jp$'));
+        && (request.auth.token.email.matches('.*@ict[.]nitech[.]ac[.]jp$')
+          || request.auth.token.email.matches('.*@stn[.]nitech[.]ac[.]jp$')
+          || request.auth.token.email.matches('.*@nitech[.]ac[.]jp$'));
       allow update: if (isOwner(userId) || isAdmin())
         && (isAdmin()
           || (((!('followers' in request.resource.data) && !('followers' in resource.data))
