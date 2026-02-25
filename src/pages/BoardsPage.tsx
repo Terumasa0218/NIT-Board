@@ -17,7 +17,7 @@ type SortType = 'latest' | 'popular' | 'unanswered'
 const LAST_SELECTED_DEPT_KEY = 'nitboard:lastSelectedDepartmentId'
 export default function BoardsPage() {
   const { t, currentLocale } = useI18n()
-  const { userProfile, updateProfile } = useAuthStore()
+  const { userProfile, updateProfile, isGuest } = useAuthStore()
   const [searchParams, setSearchParams] = useSearchParams()
   const [searchQuery, setSearchQuery] = useState('')
   const [sortType, setSortType] = useState<SortType>('latest')
@@ -334,10 +334,12 @@ export default function BoardsPage() {
                 : getTopicLabel(currentTopic.id)
               : t('boards.title')}
           </h1>
-          <Link to="/boards/create" className="btn btn-primary btn-sm">
-            <Plus className="h-4 w-4 mr-2" />
-            {t('boards.new')}
-          </Link>
+          {!isGuest && userProfile && (
+            <Link to="/boards/create" className="btn btn-primary btn-sm">
+              <Plus className="h-4 w-4 mr-2" />
+              {t('boards.new')}
+            </Link>
+          )}
         </div>
 
         <div className="space-y-4">

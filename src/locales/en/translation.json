@@ -1,46 +1,62 @@
 {
   "appTitle": "NITech Board",
-  "nav": { 
-    "home": "Home", 
-    "boards": "Boards", 
-    "events": "Events", 
-    "messages": "Messages" 
+  "nav": {
+    "home": "Home",
+    "boards": "Boards",
+    "events": "Events",
+    "messages": "Messages",
+    "profile": "Profile",
+    "settings": "Settings"
   },
   "topics": "Topics",
-  "home": { 
-    "subtitle": "An internal knowledge-sharing platform" 
+  "home": {
+    "subtitle": "An internal knowledge-sharing platform"
   },
   "boards": {
     "title": "Boards",
     "new": "New Board",
     "searchPlaceholder": "Search boards…",
     "noBoards": "No boards yet",
-    "sort": { 
-      "latest": "Latest", 
-      "popular": "Popular", 
-      "unanswered": "Unanswered" 
+    "sort": {
+      "latest": "Latest",
+      "popular": "Popular",
+      "unanswered": "Unanswered"
     },
-    "badges": { 
-      "solved": "Solved", 
-      "unanswered": "Unanswered" 
+    "badges": {
+      "solved": "Solved",
+      "unanswered": "Unanswered"
     }
   },
-  "topic": { 
-    "filtered": "Topic: {{name}}" 
+  "topic": {
+    "filtered": "Topic: {{name}}"
   },
-  "form": { 
-    "title": "Title", 
-    "desc": "Description", 
-    "topic": "Topic", 
-    "create": "Create" 
+  "form": {
+    "title": "Title",
+    "desc": "Description",
+    "topic": "Topic",
+    "create": "Create"
   },
-  "empty": { 
-    "common": "No items yet", 
-    "posts": "No posts yet" 
+  "empty": {
+    "common": "No items yet",
+    "posts": "No posts yet"
   },
-  "follow": { 
-    "follow": "Follow", 
-    "unfollow": "Unfollow", 
-    "message": "Message" 
+  "follow": {
+    "follow": "Follow",
+    "unfollow": "Unfollow",
+    "message": "Message"
+  },
+  "guest": {
+    "bannerMessage": "You are browsing as a guest. Log in to post and use DMs.",
+    "sidebarRestricted": "DM and profile features are available after login.",
+    "boardLoginRequired": "Please log in to post."
+  },
+  "auth": {
+    "guest": {
+      "browseAsGuest": "Browse as guest",
+      "entered": "Entered guest browsing mode"
+    },
+    "login": "Log in",
+    "createAccount": "Create account",
+    "logout": "Log out"
   }
 }

@@ -7,6 +7,7 @@ import { getTopicById } from '@/repositories/topicsRepository'
 import { getUsersByIds } from '@/repositories/usersRepository'
 import type { Board, Post, Topic, User } from '@/types'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from '@/utils/i18n'
 
 const Avatar = ({ user }: { user?: User }) => {
   const initial = user?.nickname?.charAt(0)?.toUpperCase() ?? '?'
@@ -24,6 +25,8 @@ const Avatar = ({ user }: { user?: User }) => {
 export default function BoardPage() {
   const { boardId } = useParams<{ boardId: string }>()
   const authUser = useAuthStore((state) => state.user)
+  const isGuest = useAuthStore((state) => state.isGuest)
+  const { t } = useI18n()
   const authUserId = authUser?.id ?? null
 
   const [board, setBoard] = useState<Board | null>(null)
@@ -245,9 +248,13 @@ export default function BoardPage() {
           }
         />
         <div className="flex flex-col">
-          <Link to={`/users/${userId}`} className="text-sm font-semibold text-foreground hover:underline">
-            {displayName}
-          </Link>
+          {authUserId ? (
+            <Link to={`/users/${userId}`} className="text-sm font-semibold text-foreground hover:underline">
+              {displayName}
+            </Link>
+          ) : (
+            <span className="text-sm font-semibold text-foreground">{displayName}</span>
+          )}
           <span className="text-xs text-muted-foreground">{userId}</span>
         </div>
       </div>
@@ -386,7 +393,7 @@ export default function BoardPage() {
                   <button
                     className="inline-flex items-center gap-1 px-3 py-1 rounded bg-primary/10 text-primary text-sm disabled:opacity-50"
                     onClick={() => handleIncrementThanks(post.id)}
-                    disabled={pendingThanksPostIds.has(post.id)}
+                    disabled={pendingThanksPostIds.has(post.id) || isGuest}
                   >
                     <ThumbsUp className="h-4 w-4" /> Thanks {post.thanksCount ?? 0}
                   </button>
@@ -405,25 +412,42 @@ export default function BoardPage() {
         </div>
       )}
 
+      {isGuest && (
+        <div className="rounded-md border border-border bg-muted/40 p-3 text-sm text-muted-foreground flex items-center justify-between gap-3">
+          <span>{t('guest.boardLoginRequired')}</span>
+          <Link to="/login" className="btn btn-outline btn-sm">{t('auth.login')}</Link>
+        </div>
+      )}
+
       <div className="sticky bottom-0 bg-background/80 backdrop-blur border border-border rounded-lg p-4 shadow-sm">
-        <form onSubmit={handleSubmit} className="space-y-3">
-          <label className="block text-sm text-muted-foreground">回答を入力</label>
-          <textarea
-            value={newPostText}
-            onChange={(e) => setNewPostText(e.target.value)}
-            className="w-full rounded-md border border-border bg-card/60 text-foreground p-3 focus:outline-none focus:ring-2 focus:ring-primary min-h-[120px]"
-            placeholder="質問への回答を入力してください"
-          />
-          <div className="flex justify-end">
-            <button
-              type="submit"
-              disabled={!newPostText.trim() || isSubmitting || !authUserId}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md disabled:opacity-50"
-            >
-              <Send className="h-4 w-4" /> {isSubmitting ? '送信中...' : '送信'}
-            </button>
+        {isGuest ? (
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">{t('guest.boardLoginRequired')}</p>
+            <div className="flex gap-2">
+              <Link to="/login" className="btn btn-primary btn-sm">{t('auth.login')}</Link>
+              <Link to="/register" className="btn btn-outline btn-sm">{t('auth.createAccount')}</Link>
+            </div>
           </div>
-        </form>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-3">
+            <label className="block text-sm text-muted-foreground">回答を入力</label>
+            <textarea
+              value={newPostText}
+              onChange={(e) => setNewPostText(e.target.value)}
+              className="w-full rounded-md border border-border bg-card/60 text-foreground p-3 focus:outline-none focus:ring-2 focus:ring-primary min-h-[120px]"
+              placeholder="質問への回答を入力してください"
+            />
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                disabled={!newPostText.trim() || isSubmitting || !authUserId}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md disabled:opacity-50"
+              >
+                <Send className="h-4 w-4" /> {isSubmitting ? '送信中...' : '送信'}
+              </button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   )
