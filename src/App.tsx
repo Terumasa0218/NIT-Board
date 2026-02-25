@@ -31,6 +31,7 @@ const CreateFeedbackPage = lazy(() => import('@/pages/CreateFeedbackPage'))
 const RankingPage = lazy(() => import('@/pages/RankingPage'))
 const AuthCallbackPage = lazy(() => import('@/pages/AuthCallbackPage'))
 const SearchPage = lazy(() => import('@/pages/SearchPage'))
+const NotificationsPage = lazy(() => import('@/pages/NotificationsPage'))
 
 function App() {
   const { user, loading, initializeAuth } = useAuthStore()
@@ -153,6 +154,10 @@ function App() {
           <Route
             path="messages/:chatId"
             element={needsProfileSetup ? <Navigate to="/profile-setup" replace /> : <MessagesPage />}
+          />
+          <Route
+            path="notifications"
+            element={needsProfileSetup ? <Navigate to="/profile-setup" replace /> : <NotificationsPage />}
           />
           <Route
             path="profile"

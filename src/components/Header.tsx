@@ -1,14 +1,42 @@
 import { Link } from 'react-router-dom'
+import { useEffect, useState } from 'react'
 import { useAuthStore } from '@/stores/auth'
 import { useI18n } from '@/utils/i18n'
 import { useTheme } from '@/hooks/useTheme'
-import { Moon, Sun, Plus, User, Search } from 'lucide-react'
+import { Moon, Sun, Plus, User, Search, Bell } from 'lucide-react'
 import LanguageToggle from './LanguageToggle'
+import { getUnreadCount } from '@/repositories/notificationsRepository'
 
 export default function Header() {
   const { user, isGuest, logout } = useAuthStore()
   const { t } = useI18n()
   const { resolvedTheme, toggleTheme } = useTheme()
+
+  const [unreadCount, setUnreadCount] = useState(0)
+
+  useEffect(() => {
+    if (!user || isGuest) {
+      setUnreadCount(0)
+      return
+    }
+
+    let active = true
+    const load = async () => {
+      try {
+        const count = await getUnreadCount(user.id)
+        if (active) setUnreadCount(count)
+      } catch (error) {
+        console.error('Failed to fetch unread notifications', error)
+      }
+    }
+
+    load()
+    const timer = setInterval(load, 30000)
+    return () => {
+      active = false
+      clearInterval(timer)
+    }
+  }, [user, isGuest])
 
   const handleLogout = async () => {
     try {
@@ -38,6 +66,17 @@ export default function Header() {
           <Link to="/search" className="btn btn-ghost btn-sm" title={t('search.title')}>
             <Search className="h-4 w-4" />
           </Link>
+
+          {user && !isGuest && (
+            <Link to="/notifications" className="btn btn-ghost btn-sm relative" title={t('notifications.title')}>
+              <Bell className="h-4 w-4" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-red-500 text-white text-[10px] leading-4 text-center">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
+            </Link>
+          )}
 
           <LanguageToggle />
 

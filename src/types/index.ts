@@ -173,9 +173,12 @@ export interface Feedback {
 export interface Notification {
   id: string
   userId: string
-  universityId: string
-  type: 'new_post' | 'new_follower' | 'new_like' | 'new_message'
-  refIds: Record<string, string>
+  type: 'thanks_received' | 'best_answer' | 'new_follower' | 'new_post_by_following' | 'new_message'
+  refId: string
+  actorId: string
+  actorName: string
+  actorAvatarUrl?: string
+  message: string
   isRead: boolean
   createdAt: Date
 }

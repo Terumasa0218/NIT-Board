@@ -19,6 +19,7 @@ import { db } from '@/firebase'
 import type { User } from '@/types'
 import { DEFAULT_UNIVERSITY_ID } from '@/constants/university'
 import { DEPARTMENTS } from '@/constants/departments'
+import { createNotification } from '@/repositories/notificationsRepository'
 
 const usersCollection = collection(db, 'users')
 const DEPARTMENT_IDS = new Set(DEPARTMENTS.map(dept => dept.id))
@@ -147,6 +148,9 @@ export const updateUserProfile = async (
 export const followUser = async (currentUserId: string, targetUserId: string): Promise<void> => {
   const currentRef = doc(usersCollection, currentUserId)
   const targetRef = doc(usersCollection, targetUserId)
+  let shouldNotify = false
+  let actorName = 'Unknown User'
+  let actorAvatarUrl: string | undefined
 
   await runTransaction(db, async (transaction) => {
     const [currentSnap, targetSnap] = await Promise.all([transaction.get(currentRef), transaction.get(targetRef)])
@@ -158,11 +162,15 @@ export const followUser = async (currentUserId: string, targetUserId: string): P
     const currentData = currentSnap.data() as DocumentData
     const targetData = targetSnap.data() as DocumentData
 
+    actorName = (currentData.nickname as string) || 'Unknown User'
+    actorAvatarUrl = (currentData.avatarUrl as string) || undefined
+
     const currentFollowing = new Set<string>(currentData.following || [])
     const targetFollowers = new Set<string>(targetData.followers || [])
 
     if (!currentFollowing.has(targetUserId)) {
       currentFollowing.add(targetUserId)
+      shouldNotify = true
       transaction.update(currentRef, {
         following: Array.from(currentFollowing),
         updatedAt: serverTimestamp(),
@@ -177,6 +185,19 @@ export const followUser = async (currentUserId: string, targetUserId: string): P
       })
     }
   })
+
+  if (shouldNotify && currentUserId !== targetUserId) {
+    void createNotification({
+      userId: targetUserId,
+      type: 'new_follower',
+      refId: currentUserId,
+      actorId: currentUserId,
+      actorName,
+      actorAvatarUrl,
+    }).catch((error) => {
+      console.error('Failed to create follow notification', error)
+    })
+  }
 }
 
 export const unfollowUser = async (currentUserId: string, targetUserId: string): Promise<void> => {

@@ -10,9 +10,16 @@
     "circles": "Circles",
     "ranking": "Ranking"
   },
-  "topics": "Topics",
+  "topics": {
+    "title": "Topics",
+    "completeness": "Completeness",
+    "contributeMessage": "This topic needs more information. Share a post and contribute!"
+  },
   "home": {
-    "subtitle": "An internal knowledge-sharing platform"
+    "subtitle": "An internal knowledge-sharing platform",
+    "welcome": "Welcome back, {{name}}",
+    "recentActivity": "Recent activity",
+    "quickAccess": "Quick access"
   },
   "boards": {
     "title": "Boards",
@@ -40,7 +47,10 @@
   },
   "empty": {
     "common": "No items yet",
-    "posts": "No posts yet"
+    "posts": "No posts yet",
+    "boards": "No boards in this section yet",
+    "circles": "No circles yet",
+    "createFirst": "Create the first one!"
   },
   "follow": {
     "follow": "Follow",
@@ -246,5 +256,22 @@
       }
     },
     "failed": "Search failed"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAllRead": "Mark all as read",
+    "empty": "No notifications yet",
+    "marked": "Marked as read",
+    "types": {
+      "thanks": "Thanks received",
+      "bestAnswer": "Selected as best answer",
+      "newFollower": "New follower",
+      "newPost": "New post by following",
+      "newMessage": "New message"
+    }
+  },
+  "breadcrumb": {
+    "home": "Home",
+    "boards": "Boards"
   }
 }

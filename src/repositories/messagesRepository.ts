@@ -17,6 +17,9 @@ import {
   type QueryDocumentSnapshot,
 } from 'firebase/firestore'
 import { db } from '@/firebase'
+import { getChat } from '@/repositories/chatsRepository'
+import { getUserById } from '@/repositories/usersRepository'
+import { createNotification } from '@/repositories/notificationsRepository'
 import type { Message } from '@/types'
 
 const messagesCollection = collection(db, 'messages')
@@ -69,5 +72,24 @@ export const sendMessage = async (input: { chatId: string; authorId: string; tex
   })
 
   const snapshot = await getDoc(docRef)
+
+  void (async () => {
+    const [chat, actor] = await Promise.all([getChat(input.chatId), getUserById(input.authorId)])
+    if (!chat) return
+    const recipientId = chat.participantIds.find((id) => id !== input.authorId)
+    if (!recipientId) return
+
+    await createNotification({
+      userId: recipientId,
+      type: 'new_message',
+      refId: input.chatId,
+      actorId: input.authorId,
+      actorName: actor?.nickname || 'Unknown User',
+      actorAvatarUrl: actor?.avatarUrl,
+    })
+  })().catch((error) => {
+    console.error('Failed to create message notification', error)
+  })
+
   return toMessage(snapshot)
 }
