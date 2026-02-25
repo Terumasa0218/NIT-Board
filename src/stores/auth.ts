@@ -17,11 +17,13 @@ import { DEFAULT_UNIVERSITY_ID } from '@/constants/university'
 import { getUserById, updateUserProfile as updateUserProfileRepo } from '@/repositories/usersRepository'
 
 let initializationInProgress = false
-const MAGIC_LINK_EMAIL_KEY = 'magicLinkEmail'
+const MAGIC_LINK_EMAIL_KEY = 'nitboard_magic_link_email'
 
 interface AuthStore extends AuthState {
+  magicLinkEmail: string | null
   sendMagicLink: (email: string) => Promise<void>
-  completeMagicLinkSignIn: () => Promise<{ isNewUser: boolean }>
+  resendMagicLink: () => Promise<void>
+  completeMagicLinkSignIn: (email?: string) => Promise<{ isNewUser: boolean } | null>
   enterGuestMode: () => void
   logout: () => Promise<void>
   setupProfile: (nickname: string, avatarUrl?: string, subEmail?: string) => Promise<void>
@@ -118,9 +120,8 @@ const ensureUserRecord = async (firebaseUser: FirebaseUser): Promise<User> => {
 }
 
 const buildActionCodeSettings = () => {
-  const appUrl = import.meta.env.VITE_APP_URL || window.location.origin
   return {
-    url: `${appUrl}/auth/callback`,
+    url: `${window.location.origin}/auth/callback`,
     handleCodeInApp: true,
   }
 }
@@ -131,25 +132,39 @@ export const useAuthStore = create<AuthStore>()(
       user: null,
       userProfile: null,
       isGuest: false,
+      magicLinkEmail: localStorage.getItem(MAGIC_LINK_EMAIL_KEY),
       loading: true,
 
       sendMagicLink: async (email: string) => {
         await sendSignInLinkToEmail(auth, email, buildActionCodeSettings())
         localStorage.setItem(MAGIC_LINK_EMAIL_KEY, email)
+        set({ magicLinkEmail: email })
       },
 
-      completeMagicLinkSignIn: async () => {
+      resendMagicLink: async () => {
+        const email = get().magicLinkEmail ?? localStorage.getItem(MAGIC_LINK_EMAIL_KEY)
+        if (!email) {
+          throw new Error('EMAIL_NOT_FOUND')
+        }
+        await sendSignInLinkToEmail(auth, email, buildActionCodeSettings())
+        localStorage.setItem(MAGIC_LINK_EMAIL_KEY, email)
+        set({ magicLinkEmail: email })
+      },
+
+      completeMagicLinkSignIn: async (email?: string) => {
         if (!isSignInWithEmailLink(auth, window.location.href)) {
           throw new Error('INVALID_MAGIC_LINK')
         }
 
-        const storedEmail = localStorage.getItem(MAGIC_LINK_EMAIL_KEY)
+        const fallbackEmail = get().magicLinkEmail ?? localStorage.getItem(MAGIC_LINK_EMAIL_KEY)
+        const storedEmail = email?.trim().toLowerCase() || fallbackEmail
         if (!storedEmail) {
-          throw new Error('EMAIL_NOT_FOUND')
+          return null
         }
 
         const credential = await signInWithEmailLink(auth, storedEmail, window.location.href)
         localStorage.removeItem(MAGIC_LINK_EMAIL_KEY)
+        set({ magicLinkEmail: null })
         const userDoc = await ensureUserRecord(credential.user)
         if (userDoc.suspendedUntil && userDoc.suspendedUntil > new Date()) {
           throw new Error('USER_SUSPENDED')
