@@ -167,16 +167,6 @@
           "mode": "DESCENDING"
         }
       ]
-    },
-    {
-      "collectionGroup": "users",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "subEmail",
-          "mode": "ASCENDING"
-        }
-      ]
     }
   ],
   "fieldOverrides": []
