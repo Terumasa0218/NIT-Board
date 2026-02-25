@@ -78,7 +78,7 @@
     "subEmail": "Notification email (optional)",
     "subEmailDescription": "Register your daily email like Gmail/iCloud to sign in with it next time",
     "subEmailPlaceholder": "Gmail / iCloud etc",
-    "enterNitechEmail": "First-time users can register with @ict.nitech.ac.jp email",
+    "enterNitechEmail": "First-time users can register with NITech email (@ict.nitech.ac.jp or @stn.nitech.ac.jp)",
     "orSubEmail": "NITech email or registered sub email",
     "emailNotFound": "This email is not registered. Please register first with your NITech email",
     "emailRequired": "Please enter your email address",
@@ -91,7 +91,7 @@
       "error": "Sign-in failed. Please login again"
     },
     "email": "Email",
-    "onlyNitechEmail": "Only Nagoya Institute of Technology email addresses (@ict.nitech.ac.jp) are allowed"
+    "onlyNitechEmail": "Only Nagoya Institute of Technology email addresses (@ict.nitech.ac.jp or @stn.nitech.ac.jp) are allowed"
   },
   "images": {
     "dropzoneDescription": "Drop images here, or click to select",
