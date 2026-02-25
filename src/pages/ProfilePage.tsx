@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { BookOpen, Crown, Edit2, Loader2, MessageCircle, ThumbsUp, User as UserIcon, Users } from 'lucide-react'
+import { BookOpen, Crown, Edit2, ImagePlus, Loader2, MessageCircle, ThumbsUp, User as UserIcon, Users } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth'
 import { getUserById, followUser, unfollowUser } from '@/repositories/usersRepository'
 import { listPostsByAuthor } from '@/repositories/postsRepository'
@@ -12,6 +12,8 @@ import toast from 'react-hot-toast'
 import { useAppStore } from '@/stores/appStore'
 import { isMutualFollow } from '@/utils/follow'
 import { DEPARTMENTS, getDepartmentById } from '@/constants/departments'
+import { useDropzone } from 'react-dropzone'
+import { IMAGE_ACCEPT, uploadImage } from '@/utils/storage'
 
 interface UserStats {
   answers: number
@@ -20,6 +22,7 @@ interface UserStats {
 }
 
 const BIO_MAX_LENGTH = 160
+const MAX_AVATAR_SIZE = 5 * 1024 * 1024
 
 export default function ProfilePage() {
   const { userId } = useParams<{ userId?: string }>()
@@ -39,8 +42,7 @@ export default function ProfilePage() {
   const [grade, setGrade] = useState('')
   const [circles, setCircles] = useState('')
   const [bio, setBio] = useState('')
-  const [avatarUrl, setAvatarUrl] = useState('')
-  const [avatarPreviewOk, setAvatarPreviewOk] = useState(true)
+  const [avatarFile, setAvatarFile] = useState<File | null>(null)
 
   const isOwnProfile = useMemo(() => {
     if (userId) {
@@ -64,22 +66,11 @@ export default function ProfilePage() {
   }, [profile, userProfile])
 
   const trimmedNickname = nickname.trim()
-  const trimmedAvatarUrl = avatarUrl.trim()
   const remainingBio = BIO_MAX_LENGTH - bio.length
   const isNicknameMissing = !trimmedNickname
   const isBioOverLimit = remainingBio < 0
 
-  const isAvatarUrlValid = useMemo(() => {
-    if (!trimmedAvatarUrl) return true
-    try {
-      const parsed = new URL(trimmedAvatarUrl)
-      return parsed.protocol === 'http:' || parsed.protocol === 'https:'
-    } catch {
-      return false
-    }
-  }, [trimmedAvatarUrl])
-
-  const canSaveProfile = !isNicknameMissing && !isBioOverLimit && isAvatarUrlValid
+  const canSaveProfile = !isNicknameMissing && !isBioOverLimit
 
   const profileDepartmentLabel = useMemo(() => {
     if (!profile?.departmentId) return ''
@@ -99,7 +90,6 @@ export default function ProfilePage() {
         setGrade(fetched.grade || '')
         setCircles((fetched.circles || []).join(', '))
         setBio(fetched.bio || '')
-        setAvatarUrl(fetched.avatarUrl || '')
       }
     } catch (error) {
       console.error(error)
@@ -138,9 +128,17 @@ export default function ProfilePage() {
     loadStats()
   }, [targetUserId])
 
-  useEffect(() => {
-    setAvatarPreviewOk(true)
-  }, [trimmedAvatarUrl])
+  const { getRootProps, getInputProps } = useDropzone({
+    onDrop: (acceptedFiles) => {
+      if (acceptedFiles[0]) {
+        setAvatarFile(acceptedFiles[0])
+      }
+    },
+    accept: IMAGE_ACCEPT,
+    maxFiles: 1,
+    maxSize: MAX_AVATAR_SIZE,
+    multiple: false,
+  })
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -153,23 +151,24 @@ export default function ProfilePage() {
       toast.error(`自己紹介は${BIO_MAX_LENGTH}文字以内で入力してください`)
       return
     }
-    if (!isAvatarUrlValid) {
-      toast.error('アイコンURLはhttp/httpsのURLを入力してください')
-      return
-    }
     setSaving(true)
     try {
       const circlesArray = circles
         .split(',')
         .map((c) => c.trim())
         .filter(Boolean)
+      let nextAvatarUrl: string | undefined
+      if (avatarFile && user) {
+        nextAvatarUrl = await uploadImage(avatarFile, `avatars/${user.id}/${Date.now()}_${avatarFile.name}`, MAX_AVATAR_SIZE)
+      }
+
       await updateProfile({
         nickname: trimmedNickname,
         departmentId: departmentId || undefined,
         grade,
         circles: circlesArray,
         bio,
-        avatarUrl: trimmedAvatarUrl || undefined,
+        avatarUrl: nextAvatarUrl,
       })
       await loadProfile()
       toast.success('プロフィールを更新しました')
@@ -378,17 +377,14 @@ export default function ProfilePage() {
               <input type="text" value={circles} onChange={(e) => setCircles(e.target.value)} className="input w-full" />
             </div>
             <div className="space-y-1">
-              <label className="text-sm text-muted-foreground">アイコンURL</label>
-              <input
-                type="url"
-                value={avatarUrl}
-                onChange={(e) => setAvatarUrl(e.target.value)}
-                className="input w-full"
-                placeholder="https://example.com/avatar.png"
-              />
-              {!isAvatarUrlValid && (
-                <p className="text-xs text-destructive">http/httpsのURLを入力してください。</p>
-              )}
+              <label className="text-sm text-muted-foreground">アバター画像</label>
+              <div {...getRootProps()} className="rounded-md border-2 border-dashed border-border p-3 cursor-pointer hover:border-primary/60">
+                <input {...getInputProps()} />
+                <div className="text-sm text-muted-foreground flex items-center gap-2">
+                  <ImagePlus className="h-4 w-4" />
+                  画像をドロップ、またはクリックして選択（5MB以下）
+                </div>
+              </div>
             </div>
             <div className="space-y-1 md:col-span-2">
               <div className="flex items-center justify-between">
@@ -409,19 +405,14 @@ export default function ProfilePage() {
             <div className="space-y-1">
               <label className="text-sm text-muted-foreground">アイコンプレビュー</label>
               <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center overflow-hidden border border-border">
-                {isAvatarUrlValid && trimmedAvatarUrl && avatarPreviewOk ? (
-                  <img
-                    src={trimmedAvatarUrl}
-                    alt="アイコンプレビュー"
-                    className="w-full h-full object-cover"
-                    onError={() => setAvatarPreviewOk(false)}
-                    onLoad={() => setAvatarPreviewOk(true)}
-                  />
+                {avatarFile ? (
+                  <img src={URL.createObjectURL(avatarFile)} alt="アイコンプレビュー" className="w-full h-full object-cover" />
+                ) : profile?.avatarUrl ? (
+                  <img src={profile.avatarUrl} alt="アイコンプレビュー" className="w-full h-full object-cover" />
                 ) : (
                   <UserIcon className="h-8 w-8 text-muted-foreground" />
                 )}
               </div>
-              <p className="text-xs text-muted-foreground">URLが空/不正な場合はプレースホルダを表示します。</p>
             </div>
           </div>
           <div className="flex justify-end">

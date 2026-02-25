@@ -58,5 +58,15 @@
     "login": "ログイン",
     "createAccount": "アカウント作成",
     "logout": "ログアウト"
+  },
+  "images": {
+    "dropzoneDescription": "画像をドロップ、またはクリックして選択",
+    "limitHint": "最大{{count}}枚、各{{sizeMb}}MBまで",
+    "uploading": "アップロード中...",
+    "errors": {
+      "invalidTypeOrSize": "画像は jpeg/png/gif/webp のみ、サイズ制限以内で選択してください",
+      "maxCount": "画像は最大{{count}}枚まで添付できます",
+      "uploadFailed": "画像アップロードに失敗しました"
+    }
   }
 }

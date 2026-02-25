@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { Calendar, Crown, MapPin, MessageSquare, RefreshCw, Send, ThumbsUp, User as UserIcon } from 'lucide-react'
+import { Calendar, Crown, ImagePlus, MapPin, MessageSquare, RefreshCw, Send, ThumbsUp, User as UserIcon, X } from 'lucide-react'
+import { useDropzone } from 'react-dropzone'
+import toast from 'react-hot-toast'
 import { getBoard, setBestAnswer } from '@/repositories/boardsRepository'
 import { createPost, incrementThanks, listPostsByBoard } from '@/repositories/postsRepository'
 import { getTopicById } from '@/repositories/topicsRepository'
@@ -8,6 +10,11 @@ import { getUsersByIds } from '@/repositories/usersRepository'
 import type { Board, Post, Topic, User } from '@/types'
 import { useAuthStore } from '@/stores/auth'
 import { useI18n } from '@/utils/i18n'
+import ImageModal from '@/components/ImageModal'
+import { IMAGE_ACCEPT, uploadMultipleImages } from '@/utils/storage'
+
+const MAX_POST_IMAGES = 4
+const MAX_BOARD_IMAGE_SIZE = 10 * 1024 * 1024
 
 const Avatar = ({ user }: { user?: User }) => {
   const initial = user?.nickname?.charAt(0)?.toUpperCase() ?? '?'
@@ -18,6 +25,29 @@ const Avatar = ({ user }: { user?: User }) => {
       ) : (
         initial
       )}
+    </div>
+  )
+}
+
+const PostImageGrid = ({ imageUrls, onOpen }: { imageUrls: string[]; onOpen: (index: number) => void }) => {
+  if (imageUrls.length === 0) return null
+
+  if (imageUrls.length === 1) {
+    return (
+      <button type="button" className="mt-3 w-full" onClick={() => onOpen(0)}>
+        <img src={imageUrls[0]} alt="post-image-1" className="w-full max-h-80 object-cover rounded-lg border border-border" />
+      </button>
+    )
+  }
+
+  const gridCols = imageUrls.length === 2 ? 'grid-cols-2' : 'grid-cols-2'
+  return (
+    <div className={`mt-3 grid ${gridCols} gap-2`}>
+      {imageUrls.slice(0, 4).map((url, index) => (
+        <button key={`${url}-${index}`} type="button" onClick={() => onOpen(index)}>
+          <img src={url} alt={`post-image-${index + 1}`} className="w-full h-36 object-cover rounded-lg border border-border" />
+        </button>
+      ))}
     </div>
   )
 }
@@ -40,6 +70,12 @@ export default function BoardPage() {
   const [newPostText, setNewPostText] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [pendingThanksPostIds, setPendingThanksPostIds] = useState<Set<string>>(new Set())
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([])
+  const [uploadingImages, setUploadingImages] = useState(false)
+
+  const [modalImages, setModalImages] = useState<string[]>([])
+  const [modalIndex, setModalIndex] = useState(0)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   const isBoardOwner = useMemo(() => {
     if (!board || !authUserId) return false
@@ -137,6 +173,47 @@ export default function BoardPage() {
     }
   }, [boardId, board])
 
+  const onDrop = useCallback(
+    (acceptedFiles: File[], fileRejections: { file: File }[]) => {
+      if (fileRejections.length > 0) {
+        toast.error(t('images.errors.invalidTypeOrSize'))
+      }
+
+      const nextFiles = [...selectedFiles, ...acceptedFiles]
+      if (nextFiles.length > MAX_POST_IMAGES) {
+        toast.error(t('images.errors.maxCount', { count: MAX_POST_IMAGES }))
+        return
+      }
+
+      setSelectedFiles(nextFiles)
+    },
+    [selectedFiles, t],
+  )
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: IMAGE_ACCEPT,
+    maxSize: MAX_BOARD_IMAGE_SIZE,
+    maxFiles: MAX_POST_IMAGES,
+    multiple: true,
+  })
+
+  const removeSelectedFile = (index: number) => {
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  const openImageModal = (imageUrls: string[], index: number) => {
+    setModalImages(imageUrls)
+    setModalIndex(index)
+    setIsModalOpen(true)
+  }
+
+  const closeModal = () => {
+    setIsModalOpen(false)
+    setModalImages([])
+    setModalIndex(0)
+  }
+
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
     if (!boardId || !authUserId || !newPostText.trim()) return
@@ -144,20 +221,30 @@ export default function BoardPage() {
     setIsSubmitting(true)
     setErrorPosts(null)
     try {
+      let uploadedImageUrls: string[] = []
+      if (selectedFiles.length > 0) {
+        setUploadingImages(true)
+        uploadedImageUrls = await uploadMultipleImages(selectedFiles, `boards/${boardId}`, MAX_BOARD_IMAGE_SIZE)
+      }
+
       const created = await createPost({
         boardId,
         authorId: authUserId,
         authorName: authUser?.nickname,
         authorAvatarUrl: authUser?.avatarUrl,
         text: newPostText.trim(),
+        imageUrls: uploadedImageUrls,
       })
       setNewPostText('')
+      setSelectedFiles([])
       setPosts((prev) => applyBestAnswerFlag(board, [...prev, created]))
       await fetchUsers([authUserId])
     } catch (error) {
       console.error(error)
       setErrorPosts('Failed to submit post')
+      toast.error(t('images.errors.uploadFailed'))
     } finally {
+      setUploadingImages(false)
       setIsSubmitting(false)
     }
   }
@@ -387,6 +474,9 @@ export default function BoardPage() {
                       </div>
                     </div>
                     <p className="text-foreground whitespace-pre-wrap leading-relaxed">{post.text}</p>
+                    {!!post.imageUrls?.length && (
+                      <PostImageGrid imageUrls={post.imageUrls} onOpen={(index) => openImageModal(post.imageUrls, index)} />
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-3 mt-4">
@@ -437,18 +527,58 @@ export default function BoardPage() {
               className="w-full rounded-md border border-border bg-card/60 text-foreground p-3 focus:outline-none focus:ring-2 focus:ring-primary min-h-[120px]"
               placeholder="質問への回答を入力してください"
             />
+
+            <div
+              {...getRootProps()}
+              className={`rounded-md border-2 border-dashed p-4 cursor-pointer transition ${
+                isDragActive ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/60'
+              }`}
+            >
+              <input {...getInputProps()} />
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <ImagePlus className="h-4 w-4" />
+                <p>{t('images.dropzoneDescription')}</p>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">{t('images.limitHint', { count: MAX_POST_IMAGES, sizeMb: 10 })}</p>
+            </div>
+
+            {selectedFiles.length > 0 && (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {selectedFiles.map((file, index) => (
+                  <div key={`${file.name}-${index}`} className="relative border border-border rounded-md p-2">
+                    <img src={URL.createObjectURL(file)} alt={file.name} className="w-full h-24 object-cover rounded" />
+                    <button
+                      type="button"
+                      onClick={() => removeSelectedFile(index)}
+                      className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-1"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
             <div className="flex justify-end">
               <button
                 type="submit"
-                disabled={!newPostText.trim() || isSubmitting || !authUserId}
+                disabled={!newPostText.trim() || isSubmitting || !authUserId || uploadingImages}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md disabled:opacity-50"
               >
-                <Send className="h-4 w-4" /> {isSubmitting ? '送信中...' : '送信'}
+                <Send className="h-4 w-4" /> {isSubmitting || uploadingImages ? t('images.uploading') : '送信'}
               </button>
             </div>
           </form>
         )}
       </div>
+
+      <ImageModal
+        images={modalImages}
+        initialIndex={modalIndex}
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        onNavigate={setModalIndex}
+      />
     </div>
   )
 }
