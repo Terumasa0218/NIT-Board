@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom'
 import { useMemo } from 'react'
 import { useAuthStore } from '@/stores/auth'
 import { useI18n } from '@/utils/i18n'
-import { Home, Calendar, Settings, User, Layers, MessageSquare } from 'lucide-react'
+import { Home, Calendar, Settings, User, Layers, MessageSquare, Users } from 'lucide-react'
 
 export default function Sidebar() {
   const { user, isGuest } = useAuthStore()
@@ -26,6 +26,11 @@ export default function Sidebar() {
         to: '/events',
         icon: Calendar,
         label: t('nav.events'),
+      },
+      {
+        to: '/circles',
+        icon: Users,
+        label: t('nav.circles'),
       },
       ...(showMemberLinks
         ? [

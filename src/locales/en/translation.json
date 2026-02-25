@@ -6,7 +6,8 @@
     "events": "Events",
     "messages": "Messages",
     "profile": "Profile",
-    "settings": "Settings"
+    "settings": "Settings",
+    "circles": "Circles"
   },
   "topics": "Topics",
   "home": {
@@ -68,5 +69,60 @@
       "maxCount": "You can attach up to {{count}} images",
       "uploadFailed": "Failed to upload images"
     }
+  },
+  "common": {
+    "edit": "Edit",
+    "delete": "Delete"
+  },
+  "circles": {
+    "title": "Circles",
+    "create": "Register Circle",
+    "searchPlaceholder": "Search by circle name…",
+    "loading": "Loading...",
+    "empty": "No circles yet.",
+    "notFound": "Circle not found.",
+    "schedule": "Schedule",
+    "location": "Location",
+    "memberCount": "Member Count",
+    "contactInfo": "Contact",
+    "created": "Circle created",
+    "deleted": "Circle deleted",
+    "deleteConfirm": "Delete this circle?",
+    "categories": {
+      "all": "All",
+      "sports": "Sports",
+      "culture": "Culture",
+      "academic": "Academic",
+      "other": "Other"
+    },
+    "detail": {
+      "askQuestion": "Ask about this circle",
+      "welcomeMessage": "Welcome Message"
+    },
+    "form": {
+      "name": "Circle name",
+      "description": "Description",
+      "schedule": "Schedule",
+      "location": "Location",
+      "memberCount": "Approx. members",
+      "contactInfo": "Contact or SNS link",
+      "welcomeMessage": "Welcome message (optional)"
+    },
+    "errors": {
+      "createFailed": "Failed to create circle",
+      "deleteFailed": "Failed to delete circle",
+      "askFailed": "Failed to open question board"
+    }
+  },
+  "admin": {
+    "title": "Admin Q&A",
+    "message": "Ask anything. Feedback is always welcome.",
+    "askButton": "Ask the admin",
+    "feedbackButton": "Send site feedback",
+    "feedbackPlaceholder": "Write your feedback or issue report.",
+    "feedbackSubmitted": "Feedback submitted",
+    "feedbackSubmitFailed": "Failed to submit feedback",
+    "createBoardFailed": "Failed to create admin board",
+    "badge": "Admin"
   }
 }

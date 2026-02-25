@@ -335,13 +335,18 @@ export default function BoardPage() {
           }
         />
         <div className="flex flex-col">
-          {authUserId ? (
-            <Link to={`/users/${userId}`} className="text-sm font-semibold text-foreground hover:underline">
-              {displayName}
-            </Link>
-          ) : (
-            <span className="text-sm font-semibold text-foreground">{displayName}</span>
-          )}
+          <div className="flex items-center gap-2">
+            {authUserId ? (
+              <Link to={`/users/${userId}`} className="text-sm font-semibold text-foreground hover:underline">
+                {displayName}
+              </Link>
+            ) : (
+              <span className="text-sm font-semibold text-foreground">{displayName}</span>
+            )}
+            {user?.role === 'admin' && (
+              <span className="px-2 py-0.5 rounded bg-purple-100 text-purple-700 text-[10px] font-semibold">{t('admin.badge')}</span>
+            )}
+          </div>
           <span className="text-xs text-muted-foreground">{userId}</span>
         </div>
       </div>
