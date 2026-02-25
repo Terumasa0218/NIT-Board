@@ -14,6 +14,8 @@ import { isMutualFollow } from '@/utils/follow'
 import { DEPARTMENTS, getDepartmentById } from '@/constants/departments'
 import { useDropzone } from 'react-dropzone'
 import { IMAGE_ACCEPT, uploadImage } from '@/utils/storage'
+import { BADGES } from '@/constants/badges'
+import { useI18n } from '@/utils/i18n'
 
 interface UserStats {
   answers: number
@@ -29,6 +31,7 @@ export default function ProfilePage() {
   const navigate = useNavigate()
   const { selectedUniversityId } = useAppStore()
   const { user, userProfile, fetchUserProfile, updateProfile } = useAuthStore()
+  const { t } = useI18n()
 
   const [profile, setProfile] = useState<User | null>(null)
   const [stats, setStats] = useState<UserStats>({ answers: 0, thanks: 0, bestAnswers: 0 })
@@ -287,6 +290,29 @@ export default function ProfilePage() {
           </div>
         )}
       </div>
+
+
+
+      {profile && (
+        <div className="bg-card border border-border rounded-lg p-6 shadow-sm space-y-4">
+          <h2 className="text-lg font-semibold text-foreground">{t('points.title')}</h2>
+          <div className="text-4xl font-bold text-primary">{profile.points ?? 0}<span className="text-base ml-2 text-muted-foreground">pt</span></div>
+          <div className="flex flex-wrap gap-2">
+            {(profile.badges ?? []).length === 0 ? (
+              <span className="text-sm text-muted-foreground">-</span>
+            ) : (
+              (profile.badges ?? []).map((badgeId) => {
+                const badge = BADGES.find((item) => item.id === badgeId)
+                return (
+                  <span key={badgeId} className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-amber-100 text-amber-700 text-xs">
+                    🏅 {badge ? t(`${badge.key}.name`) : badgeId}
+                  </span>
+                )
+              })
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <StatCard icon={<BookOpen className="h-4 w-4" />} label="回答数" value={stats.answers} loading={loadingStats} />

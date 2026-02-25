@@ -12,6 +12,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useI18n } from '@/utils/i18n'
 import ImageModal from '@/components/ImageModal'
 import { IMAGE_ACCEPT, uploadMultipleImages } from '@/utils/storage'
+import { addPoints } from '@/utils/points'
 
 const MAX_POST_IMAGES = 4
 const MAX_BOARD_IMAGE_SIZE = 10 * 1024 * 1024
@@ -249,7 +250,7 @@ export default function BoardPage() {
     }
   }
 
-  const handleIncrementThanks = async (postId: string) => {
+  const handleIncrementThanks = async (postId: string, postAuthorId: string) => {
     if (pendingThanksPostIds.has(postId)) return
     setPendingThanksPostIds((prev) => {
       const next = new Set(prev)
@@ -258,6 +259,7 @@ export default function BoardPage() {
     })
     try {
       await incrementThanks(postId)
+      await addPoints(postAuthorId, 'thanks_received', 5, postId)
       setPosts((prev) => prev.map((post) => (post.id === postId ? { ...post, thanksCount: (post.thanksCount ?? 0) + 1 } : post)))
     } catch (error) {
       console.error(error)
@@ -271,10 +273,11 @@ export default function BoardPage() {
     }
   }
 
-  const handleSetBestAnswer = async (postId: string) => {
+  const handleSetBestAnswer = async (postId: string, postAuthorId: string) => {
     if (!boardId) return
     try {
       await setBestAnswer(boardId, postId)
+      await addPoints(postAuthorId, 'best_answer', 50, postId)
       setBoard((prev) => (prev ? { ...prev, bestAnswerPostId: postId } : prev))
       setPosts((prev) =>
         prev.map((post) => ({
@@ -487,7 +490,7 @@ export default function BoardPage() {
                 <div className="flex items-center gap-3 mt-4">
                   <button
                     className="inline-flex items-center gap-1 px-3 py-1 rounded bg-primary/10 text-primary text-sm disabled:opacity-50"
-                    onClick={() => handleIncrementThanks(post.id)}
+                    onClick={() => handleIncrementThanks(post.id, post.authorId)}
                     disabled={pendingThanksPostIds.has(post.id) || isGuest}
                   >
                     <ThumbsUp className="h-4 w-4" /> Thanks {post.thanksCount ?? 0}
@@ -495,7 +498,7 @@ export default function BoardPage() {
                   {isBoardOwner && !post.isBestAnswer && (
                     <button
                       className="inline-flex items-center gap-1 px-3 py-1 rounded bg-emerald-500/10 text-emerald-600 text-sm hover:bg-emerald-500/20"
-                      onClick={() => handleSetBestAnswer(post.id)}
+                      onClick={() => handleSetBestAnswer(post.id, post.authorId)}
                     >
                       <Crown className="h-4 w-4" /> ベストアンサーにする
                     </button>

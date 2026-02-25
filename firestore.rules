@@ -161,6 +161,13 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
+
+    match /pointHistory/{historyId} {
+      allow read: if isSignedIn() && isOwner(resource.data.userId);
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
     // Notifications collection
     match /notifications/{notificationId} {
       allow read: if isSignedIn() && isOwner(resource.data.userId);

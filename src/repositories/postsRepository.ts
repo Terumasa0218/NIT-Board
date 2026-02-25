@@ -18,6 +18,7 @@ import {
 import { db } from '@/firebase'
 import type { Post } from '@/types'
 import { DEFAULT_UNIVERSITY_ID } from '@/constants/university'
+import { addPoints } from '@/utils/points'
 
 const postsCollection = collection(db, 'posts')
 const boardsCollection = collection(db, 'boards')
@@ -96,6 +97,8 @@ export const createPost = async (input: {
       updatedAt: now,
     })
   })
+
+  await addPoints(input.authorId, 'post_created', 10, postRef.id)
 
   const createdSnapshot = await getDoc(postRef)
   return toPost(createdSnapshot)

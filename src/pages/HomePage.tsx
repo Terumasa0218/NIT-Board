@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useI18n } from '@/utils/i18n'
-import { MessageSquare, Clock, Shield } from 'lucide-react'
-import type { Board } from '@/types'
+import { MessageSquare, Clock, Shield, Trophy } from 'lucide-react'
+import type { Board, User } from '@/types'
 import { ADMIN_PROFILE } from '@/constants/admin'
 import { useAuthStore } from '@/stores/auth'
 import { useAppStore } from '@/stores/appStore'
 import toast from 'react-hot-toast'
 import { getBoard, createBoard } from '@/repositories/boardsRepository'
+import { listTopUsersByPoints } from '@/repositories/usersRepository'
 
 const RECENT_KEY = 'recentBoardIds'
 const MAX_RECENT = 10
@@ -19,6 +20,7 @@ export default function HomePage() {
   const { selectedUniversityId } = useAppStore()
   const [recentBoards, setRecentBoards] = useState<Board[]>([])
   const [loading, setLoading] = useState(true)
+  const [topUsers, setTopUsers] = useState<User[]>([])
 
   useEffect(() => {
     const loadRecentBoards = async () => {
@@ -45,6 +47,14 @@ export default function HomePage() {
     loadRecentBoards()
   }, [])
 
+
+  useEffect(() => {
+    const loadTopUsers = async () => {
+      const users = await listTopUsersByPoints(5)
+      setTopUsers(users)
+    }
+    loadTopUsers()
+  }, [])
 
   const handleAskAdmin = async () => {
     if (!user || isGuest) {
@@ -94,6 +104,22 @@ export default function HomePage() {
               <Link to="/feedback/create" className="btn btn-outline btn-sm">{t('admin.feedbackButton')}</Link>
             </div>
           </div>
+        </div>
+      </div>
+
+
+      <div className="mb-6 rounded-lg border border-border bg-card p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <Trophy className="h-5 w-5 text-amber-500" />
+          <h2 className="text-lg font-semibold">{t('ranking.thisMonth')} TOP5</h2>
+        </div>
+        <div className="space-y-2">
+          {topUsers.map((u, index) => (
+            <div key={u.id} className="flex items-center justify-between text-sm">
+              <span>#{index + 1} {u.nickname}</span>
+              <span className="font-semibold">{u.points ?? 0} pt</span>
+            </div>
+          ))}
         </div>
       </div>
 

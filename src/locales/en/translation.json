@@ -7,7 +7,8 @@
     "messages": "Messages",
     "profile": "Profile",
     "settings": "Settings",
-    "circles": "Circles"
+    "circles": "Circles",
+    "ranking": "Ranking"
   },
   "topics": "Topics",
   "home": {
@@ -124,5 +125,38 @@
     "feedbackSubmitFailed": "Failed to submit feedback",
     "createBoardFailed": "Failed to create admin board",
     "badge": "Admin"
+  },
+  "points": {
+    "title": "Points",
+    "total": "Total Points",
+    "history": "Point History"
+  },
+  "badges": {
+    "first-post": {
+      "name": "First Post",
+      "description": "Created your first post"
+    },
+    "contributor": {
+      "name": "Contributor",
+      "description": "Reached 100 points"
+    },
+    "expert": {
+      "name": "Expert",
+      "description": "Selected as best answer 5 times"
+    },
+    "helper": {
+      "name": "Helper",
+      "description": "Received 50 thanks"
+    },
+    "circle-leader": {
+      "name": "Circle Leader",
+      "description": "Registered a circle"
+    }
+  },
+  "ranking": {
+    "title": "Ranking",
+    "overall": "Overall Ranking",
+    "byDepartment": "Ranking by Department",
+    "thisMonth": "Top Contributors This Month"
   }
 }

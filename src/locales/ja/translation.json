@@ -7,7 +7,8 @@
     "messages": "メッセージ",
     "profile": "プロフィール",
     "settings": "設定",
-    "circles": "サークル"
+    "circles": "サークル",
+    "ranking": "ランキング"
   },
   "topics": "トピック",
   "home": {
@@ -124,5 +125,38 @@
     "feedbackSubmitFailed": "フィードバック送信に失敗しました",
     "createBoardFailed": "管理人Q&A掲示板の作成に失敗しました",
     "badge": "管理人"
+  },
+  "points": {
+    "title": "ポイント",
+    "total": "合計ポイント",
+    "history": "ポイント履歴"
+  },
+  "badges": {
+    "first-post": {
+      "name": "はじめての投稿",
+      "description": "初めて投稿した"
+    },
+    "contributor": {
+      "name": "貢献者",
+      "description": "100ポイント達成"
+    },
+    "expert": {
+      "name": "エキスパート",
+      "description": "ベストアンサー5回"
+    },
+    "helper": {
+      "name": "みんなの助っ人",
+      "description": "Thanks累計50回"
+    },
+    "circle-leader": {
+      "name": "サークルリーダー",
+      "description": "サークルを登録した"
+    }
+  },
+  "ranking": {
+    "title": "ランキング",
+    "overall": "全体ランキング",
+    "byDepartment": "学科別ランキング",
+    "thisMonth": "今月の貢献者"
   }
 }
