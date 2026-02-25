@@ -63,6 +63,7 @@ export const createPost = async (input: {
   authorName?: string
   authorAvatarUrl?: string
   text: string
+  imageUrls?: string[]
 }): Promise<Post> => {
   const postRef = doc(postsCollection)
   const boardRef = doc(boardsCollection, input.boardId)
@@ -82,7 +83,7 @@ export const createPost = async (input: {
       authorName: input.authorName ?? null,
       authorAvatarUrl: input.authorAvatarUrl ?? null,
       text: input.text,
-      imageUrls: [],
+      imageUrls: input.imageUrls ?? [],
       thanksCount: 0,
       universityId: boardData.universityId || DEFAULT_UNIVERSITY_ID,
       createdAt: now,

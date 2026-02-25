@@ -58,5 +58,15 @@
     "login": "Log in",
     "createAccount": "Create account",
     "logout": "Log out"
+  },
+  "images": {
+    "dropzoneDescription": "Drop images here, or click to select",
+    "limitHint": "Up to {{count}} images, {{sizeMb}}MB each",
+    "uploading": "Uploading...",
+    "errors": {
+      "invalidTypeOrSize": "Please choose jpeg/png/gif/webp images within the size limit",
+      "maxCount": "You can attach up to {{count}} images",
+      "uploadFailed": "Failed to upload images"
+    }
   }
 }
