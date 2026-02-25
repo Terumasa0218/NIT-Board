@@ -65,6 +65,8 @@ const createUserDocument = async (
     followers: [],
     following: [],
     preferredLocale: 'ja',
+    points: 0,
+    badges: [],
     createdAt: new Date(),
     updatedAt: new Date(),
   }
@@ -78,6 +80,8 @@ const createUserDocument = async (
     following: userData.following,
     preferredLocale: userData.preferredLocale,
     universityId: userData.universityId,
+    points: userData.points,
+    badges: userData.badges,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   }

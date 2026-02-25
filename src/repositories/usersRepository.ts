@@ -8,6 +8,8 @@ import {
   updateDoc,
   where,
   query,
+  orderBy,
+  limit,
   type DocumentData,
   type DocumentSnapshot,
 } from 'firebase/firestore'
@@ -57,6 +59,8 @@ const toUser = (snapshot: DocumentSnapshot<DocumentData>): User => {
     followers: data.followers || [],
     following: data.following || [],
     preferredLocale: data.preferredLocale || 'ja',
+    points: data.points ?? 0,
+    badges: data.badges || [],
     createdAt: data.createdAt?.toDate() || new Date(),
     updatedAt: data.updatedAt?.toDate() || new Date(),
   }
@@ -196,4 +200,23 @@ export const unfollowUser = async (currentUserId: string, targetUserId: string):
       })
     }
   })
+}
+
+
+export const listTopUsersByPoints = async (limitCount = 20, departmentId?: string): Promise<User[]> => {
+  const usersQuery = departmentId
+    ? query(usersCollection, where('departmentId', '==', departmentId), orderBy('points', 'desc'), limit(limitCount))
+    : query(usersCollection, orderBy('points', 'desc'), limit(limitCount))
+  const snapshot = await getDocs(usersQuery)
+  return snapshot.docs.map((docSnapshot) => toUser(docSnapshot))
+}
+
+export const getUserRankByPoints = async (userId: string, departmentId?: string): Promise<number | null> => {
+  const current = await getUserById(userId)
+  if (!current) return null
+
+  const base = departmentId ? query(usersCollection, where('departmentId', '==', departmentId)) : usersCollection
+  const rankQuery = query(base, where('points', '>', current.points ?? 0))
+  const snapshot = await getDocs(rankQuery)
+  return snapshot.size + 1
 }

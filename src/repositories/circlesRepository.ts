@@ -18,6 +18,7 @@ import {
 } from 'firebase/firestore'
 import { db } from '@/firebase'
 import type { Circle, CircleCategory } from '@/types'
+import { addPoints } from '@/utils/points'
 
 const circlesCollection = collection(db, 'circles')
 
@@ -83,6 +84,7 @@ export const createCircle = async (data: Omit<Circle, 'id' | 'createdAt' | 'upda
     createdAt: now,
     updatedAt: now,
   })
+  await addPoints(data.createdBy, 'circle_created', 20, ref.id)
   const created = await getDoc(ref)
   return toCircle(created)
 }

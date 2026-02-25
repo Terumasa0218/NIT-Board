@@ -7,6 +7,7 @@ import { doc, getDoc } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { uploadImage, IMAGE_ACCEPT } from '@/utils/storage'
 import { useDropzone } from 'react-dropzone'
+import { addPoints } from '@/utils/points'
 
 const MAX_AVATAR_SIZE = 5 * 1024 * 1024
 
@@ -69,6 +70,7 @@ export default function ProfileSetupPage() {
 
       if (!userDoc) {
         await setupProfile(nickname.trim(), avatarUrl)
+        await addPoints(user.id, 'profile_setup', 30, user.id)
         toast.success('プロフィールを作成しました')
       } else {
         await updateProfile({ nickname: nickname.trim(), avatarUrl })

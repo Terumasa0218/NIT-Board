@@ -14,6 +14,8 @@ export interface User {
   followers: string[]
   following: string[]
   preferredLocale: 'ja' | 'en'
+  points?: number
+  badges?: string[]
   createdAt: Date
   updatedAt: Date
 }

@@ -28,6 +28,7 @@ const CircleDetailPage = lazy(() => import('@/pages/CircleDetailPage'))
 const CreateCirclePage = lazy(() => import('@/pages/CreateCirclePage'))
 const EditCirclePage = lazy(() => import('@/pages/EditCirclePage'))
 const CreateFeedbackPage = lazy(() => import('@/pages/CreateFeedbackPage'))
+const RankingPage = lazy(() => import('@/pages/RankingPage'))
 
 function App() {
   const { user, loading, initializeAuth } = useAuthStore()
@@ -135,6 +136,7 @@ function App() {
             element={needsProfileSetup ? <Navigate to="/profile-setup" replace /> : <CreateBoardPage />}
           />
           <Route path="events" element={<EventsPage />} />
+          <Route path="ranking" element={<RankingPage />} />
           <Route path="circles" element={<CirclesPage />} />
           <Route path="circles/:circleId" element={<CircleDetailPage />} />
           <Route path="circles/create" element={needsProfileSetup ? <Navigate to="/profile-setup" replace /> : <CreateCirclePage />} />
