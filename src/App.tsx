@@ -23,6 +23,11 @@ const ProfilePage = lazy(() => import('@/pages/ProfilePage'))
 const ProfileSetupPage = lazy(() => import('@/pages/ProfileSetupPage'))
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
+const CirclesPage = lazy(() => import('@/pages/CirclesPage'))
+const CircleDetailPage = lazy(() => import('@/pages/CircleDetailPage'))
+const CreateCirclePage = lazy(() => import('@/pages/CreateCirclePage'))
+const EditCirclePage = lazy(() => import('@/pages/EditCirclePage'))
+const CreateFeedbackPage = lazy(() => import('@/pages/CreateFeedbackPage'))
 
 function App() {
   const { user, loading, initializeAuth } = useAuthStore()
@@ -130,6 +135,11 @@ function App() {
             element={needsProfileSetup ? <Navigate to="/profile-setup" replace /> : <CreateBoardPage />}
           />
           <Route path="events" element={<EventsPage />} />
+          <Route path="circles" element={<CirclesPage />} />
+          <Route path="circles/:circleId" element={<CircleDetailPage />} />
+          <Route path="circles/create" element={needsProfileSetup ? <Navigate to="/profile-setup" replace /> : <CreateCirclePage />} />
+          <Route path="circles/:circleId/edit" element={needsProfileSetup ? <Navigate to="/profile-setup" replace /> : <EditCirclePage />} />
+          <Route path="feedback/create" element={needsProfileSetup ? <Navigate to="/profile-setup" replace /> : <CreateFeedbackPage />} />
           <Route
             path="messages"
             element={needsProfileSetup ? <Navigate to="/profile-setup" replace /> : <MessagesPage />}

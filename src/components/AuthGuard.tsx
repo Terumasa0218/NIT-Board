@@ -6,11 +6,12 @@ interface AuthGuardProps {
   children: ReactNode
 }
 
-const GUEST_ALLOWED_PATHS = ['/', '/departments', '/topics', '/boards', '/events']
+const GUEST_ALLOWED_PATHS = ['/', '/departments', '/topics', '/boards', '/events', '/circles']
 
 const isGuestAllowedPath = (pathname: string): boolean => {
   if (GUEST_ALLOWED_PATHS.includes(pathname)) return true
-  return /^\/boards\/[^/]+$/.test(pathname) && pathname !== '/boards/create'
+  if (/^\/boards\/[^/]+$/.test(pathname) && pathname !== '/boards/create') return true
+  return /^\/circles\/[^/]+$/.test(pathname) && pathname !== '/circles/create'
 }
 
 export default function AuthGuard({ children }: AuthGuardProps) {

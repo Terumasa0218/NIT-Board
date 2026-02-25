@@ -45,6 +45,7 @@ const toUser = (snapshot: DocumentSnapshot<DocumentData>): User => {
     id: snapshot.id,
     email: data.email,
     nickname: data.nickname,
+    role: data.role === 'admin' ? 'admin' : 'user',
     universityId: data.universityId || DEFAULT_UNIVERSITY_ID,
     avatarUrl: data.avatarUrl,
     suspendedUntil: data.suspendedUntil?.toDate(),

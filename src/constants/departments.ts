@@ -136,6 +136,15 @@ export const TOPICS: Topic[] = [
     slug: 'other',
     isActive: true,
   },
+  {
+    id: 'admin-qa',
+    universityId: DEFAULT_UNIVERSITY_ID,
+    departmentId: 'all',
+    nameJa: '管理人Q&A',
+    nameEn: 'Admin Q&A',
+    slug: 'admin-qa',
+    isActive: true,
+  }
 ]
 
 const TOPIC_ID_ALIAS_MAP: Record<string, string> = {

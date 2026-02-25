@@ -2,6 +2,7 @@ export interface User {
   id: string
   email: string
   nickname: string
+  role?: 'admin' | 'user'
   universityId?: string
   avatarUrl?: string
   suspendedUntil?: Date
@@ -57,6 +58,28 @@ export interface Board {
   latestPostAt: Date | null
   yearCreated: number
   bestAnswerPostId?: string | null
+  relatedCircleId?: string
+}
+
+export type CircleCategory = 'sports' | 'culture' | 'academic' | 'other'
+
+export interface Circle {
+  id: string
+  name: string
+  category: CircleCategory
+  description: string
+  imageUrl?: string
+  schedule: string
+  location: string
+  memberCount: number
+  contactInfo: string
+  welcomeMessage?: string
+  createdBy: string
+  universityId: string
+  isActive: boolean
+  questionBoardId?: string
+  createdAt: Date
+  updatedAt: Date
 }
 
 export interface Post {

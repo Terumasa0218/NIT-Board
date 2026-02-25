@@ -1,15 +1,22 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useI18n } from '@/utils/i18n'
-import { MessageSquare, Clock } from 'lucide-react'
+import { MessageSquare, Clock, Shield } from 'lucide-react'
 import type { Board } from '@/types'
-import { getBoard } from '@/repositories/boardsRepository'
+import { ADMIN_PROFILE } from '@/constants/admin'
+import { useAuthStore } from '@/stores/auth'
+import { useAppStore } from '@/stores/appStore'
+import toast from 'react-hot-toast'
+import { getBoard, createBoard } from '@/repositories/boardsRepository'
 
 const RECENT_KEY = 'recentBoardIds'
 const MAX_RECENT = 10
 
 export default function HomePage() {
   const { t, formatRelativeTime } = useI18n()
+  const navigate = useNavigate()
+  const { user, isGuest } = useAuthStore()
+  const { selectedUniversityId } = useAppStore()
   const [recentBoards, setRecentBoards] = useState<Board[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -38,6 +45,30 @@ export default function HomePage() {
     loadRecentBoards()
   }, [])
 
+
+  const handleAskAdmin = async () => {
+    if (!user || isGuest) {
+      toast.error(t('guest.boardLoginRequired'))
+      return
+    }
+    try {
+      const board = await createBoard({
+        title: t('admin.title'),
+        topicId: 'admin-qa',
+        departmentId: 'all',
+        year: 1,
+        description: t('admin.message'),
+        boardType: 'qa',
+        createdBy: user.id,
+        universityId: selectedUniversityId,
+      })
+      navigate(`/boards/${board.id}`)
+    } catch (error) {
+      console.error(error)
+      toast.error(t('admin.createBoardFailed'))
+    }
+  }
+
   return (
     <div className="max-w-6xl mx-auto p-6">
       <div className="mb-8">
@@ -47,6 +78,23 @@ export default function HomePage() {
         <p className="text-lg text-muted-foreground">
           {t('home.subtitle')}
         </p>
+      </div>
+
+      <div className="mb-6 rounded-lg border border-border bg-card p-5">
+        <div className="flex items-start gap-3">
+          <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+            {ADMIN_PROFILE.avatarUrl ? <img src={ADMIN_PROFILE.avatarUrl} alt={ADMIN_PROFILE.name} className="w-full h-full rounded-full object-cover" /> : <Shield className="h-6 w-6" />}
+          </div>
+          <div className="flex-1">
+            <h2 className="text-lg font-semibold">{t('admin.title')}</h2>
+            <p className="text-sm text-muted-foreground">{ADMIN_PROFILE.department} / {ADMIN_PROFILE.grade}</p>
+            <p className="mt-2 text-sm">{t('admin.message')}</p>
+            <div className="mt-3 flex gap-2">
+              <button onClick={handleAskAdmin} className="btn btn-primary btn-sm">{t('admin.askButton')}</button>
+              <Link to="/feedback/create" className="btn btn-outline btn-sm">{t('admin.feedbackButton')}</Link>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="card">

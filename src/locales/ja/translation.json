@@ -6,7 +6,8 @@
     "events": "イベント",
     "messages": "メッセージ",
     "profile": "プロフィール",
-    "settings": "設定"
+    "settings": "設定",
+    "circles": "サークル"
   },
   "topics": "トピック",
   "home": {
@@ -68,5 +69,60 @@
       "maxCount": "画像は最大{{count}}枚まで添付できます",
       "uploadFailed": "画像アップロードに失敗しました"
     }
+  },
+  "common": {
+    "edit": "編集",
+    "delete": "削除"
+  },
+  "circles": {
+    "title": "サークル",
+    "create": "サークルを登録する",
+    "searchPlaceholder": "サークル名で検索…",
+    "loading": "読み込み中...",
+    "empty": "サークルはまだありません。",
+    "notFound": "サークルが見つかりません。",
+    "schedule": "活動日時",
+    "location": "活動場所",
+    "memberCount": "人数",
+    "contactInfo": "連絡先",
+    "created": "サークルを登録しました",
+    "deleted": "サークルを削除しました",
+    "deleteConfirm": "このサークルを削除しますか？",
+    "categories": {
+      "all": "全て",
+      "sports": "運動系",
+      "culture": "文化系",
+      "academic": "学術系",
+      "other": "その他"
+    },
+    "detail": {
+      "askQuestion": "このサークルについて質問する",
+      "welcomeMessage": "新入生へのメッセージ"
+    },
+    "form": {
+      "name": "サークル名",
+      "description": "活動内容・紹介文",
+      "schedule": "活動日時",
+      "location": "活動場所",
+      "memberCount": "おおよその人数",
+      "contactInfo": "連絡先やSNSリンク",
+      "welcomeMessage": "新入生へのメッセージ（任意）"
+    },
+    "errors": {
+      "createFailed": "サークル登録に失敗しました",
+      "deleteFailed": "サークル削除に失敗しました",
+      "askFailed": "質問掲示板の作成に失敗しました"
+    }
+  },
+  "admin": {
+    "title": "管理人Q&A",
+    "message": "どんな質問でも回答します。サイト改善要望も歓迎です。",
+    "askButton": "管理人に質問する",
+    "feedbackButton": "サイトへのフィードバック",
+    "feedbackPlaceholder": "改善要望や不具合報告などを入力してください。",
+    "feedbackSubmitted": "フィードバックを送信しました",
+    "feedbackSubmitFailed": "フィードバック送信に失敗しました",
+    "createBoardFailed": "管理人Q&A掲示板の作成に失敗しました",
+    "badge": "管理人"
   }
 }

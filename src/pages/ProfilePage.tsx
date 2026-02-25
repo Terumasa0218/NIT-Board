@@ -259,7 +259,7 @@ export default function ProfilePage() {
             )}
           </div>
           <div className="space-y-1">
-            <h1 className="text-2xl font-bold text-foreground">{profile?.nickname || 'ユーザー'}</h1>
+            <div className="flex items-center gap-2"><h1 className="text-2xl font-bold text-foreground">{profile?.nickname || 'ユーザー'}</h1>{profile?.role === 'admin' && <span className="px-2 py-0.5 rounded bg-purple-100 text-purple-700 text-xs font-semibold">管理人</span>}</div>
             <p className="text-muted-foreground text-sm">{profile?.bio || '自己紹介はまだありません'}</p>
             <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
               {profileDepartmentLabel && <span className="px-2 py-1 bg-muted rounded-full">{profileDepartmentLabel}</span>}
