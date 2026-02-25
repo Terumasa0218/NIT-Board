@@ -89,20 +89,20 @@ export default function HomePage() {
   const todayLabel = useMemo(() => formatDate(new Date(), 'PPP'), [formatDate])
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-6">
+    <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
       <div className="rounded-lg border border-border bg-card p-5">
         <h1 className="text-2xl font-bold text-foreground">{t('home.welcome', { name: user?.nickname || 'Guest' })}</h1>
-        <p className="text-sm text-muted-foreground mt-2 inline-flex items-center gap-2"><CalendarDays className="h-4 w-4" />{todayLabel}</p>
+        <p className="text-sm text-steel-500 mt-2 inline-flex items-center gap-2"><CalendarDays className="h-4 w-4" />{todayLabel}</p>
       </div>
 
       <div className="rounded-lg border border-border bg-card p-5">
         <div className="flex items-start gap-3">
-          <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+          <div className="w-12 h-12 rounded-full bg-nit-100 dark:bg-nit-900/40 text-nit-600 dark:text-nit-400 flex items-center justify-center">
             {ADMIN_PROFILE.avatarUrl ? <img src={ADMIN_PROFILE.avatarUrl} alt={ADMIN_PROFILE.name} className="w-full h-full rounded-full object-cover" /> : <Shield className="h-6 w-6" />}
           </div>
           <div className="flex-1">
             <h2 className="text-lg font-semibold">{t('admin.title')}</h2>
-            <p className="text-sm text-muted-foreground">{ADMIN_PROFILE.department} / {ADMIN_PROFILE.grade}</p>
+            <p className="text-sm text-steel-500">{ADMIN_PROFILE.department} / {ADMIN_PROFILE.grade}</p>
             <p className="mt-2 text-sm">{t('admin.message')}</p>
             <div className="mt-3 flex gap-2">
               <button onClick={handleAskAdmin} className="btn btn-primary btn-sm">{t('admin.askButton')}</button>
@@ -113,12 +113,12 @@ export default function HomePage() {
       </div>
 
       <div className="rounded-lg border border-border bg-card p-5">
-        <div className="flex items-center gap-2 mb-3"><MessageSquare className="h-5 w-5 text-primary" /><h2 className="text-lg font-semibold">{t('home.recentActivity')}</h2></div>
+        <div className="flex items-center gap-2 mb-3"><MessageSquare className="h-5 w-5 text-nit-600 dark:text-nit-400" /><h2 className="text-lg font-semibold">{t('home.recentActivity')}</h2></div>
         <div className="space-y-2">
-          {recentActivity.length === 0 ? <p className="text-muted-foreground">{t('empty.boards')}</p> : recentActivity.map((board) => (
-            <Link key={board.id} to={`/boards/${board.id}`} className="block rounded-md border border-border p-3 hover:bg-accent/30">
+          {recentActivity.length === 0 ? <p className="text-steel-500">{t('empty.boards')}</p> : recentActivity.map((board) => (
+            <Link key={board.id} to={`/boards/${board.id}`} className="block rounded-md border border-border p-3 hover:bg-nit-50 dark:hover:bg-nit-900/40 transition-all duration-200">
               <p className="font-medium">{board.title}</p>
-              <p className="text-xs text-muted-foreground">{board.createdBy} · {formatRelativeTime(board.createdAt)}</p>
+              <p className="text-xs text-steel-500">{board.createdBy} · {formatRelativeTime(board.createdAt)}</p>
             </Link>
           ))}
         </div>
@@ -142,17 +142,17 @@ export default function HomePage() {
       <div className="rounded-lg border border-border bg-card p-5">
         <h2 className="text-lg font-semibold mb-3">{t('home.quickAccess')}</h2>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <Link to="/departments" className="rounded-md border border-border p-4 hover:bg-accent/30"><BookOpen className="h-4 w-4 mb-2" />{t('nav.boards')}</Link>
-          <Link to="/circles" className="rounded-md border border-border p-4 hover:bg-accent/30"><Users className="h-4 w-4 mb-2" />{t('nav.circles')}</Link>
-          <Link to="/search" className="rounded-md border border-border p-4 hover:bg-accent/30"><Search className="h-4 w-4 mb-2" />{t('search.title')}</Link>
-          <Link to="/boards" className="rounded-md border border-border p-4 hover:bg-accent/30"><MessageSquare className="h-4 w-4 mb-2" />{t('boards.title')}</Link>
+          <Link to="/departments" className="rounded-md border border-border p-4 hover:bg-nit-50 dark:hover:bg-nit-900/40 transition-all duration-200"><BookOpen className="h-4 w-4 mb-2" />{t('nav.boards')}</Link>
+          <Link to="/circles" className="rounded-md border border-border p-4 hover:bg-nit-50 dark:hover:bg-nit-900/40 transition-all duration-200"><Users className="h-4 w-4 mb-2" />{t('nav.circles')}</Link>
+          <Link to="/search" className="rounded-md border border-border p-4 hover:bg-nit-50 dark:hover:bg-nit-900/40 transition-all duration-200"><Search className="h-4 w-4 mb-2" />{t('search.title')}</Link>
+          <Link to="/boards" className="rounded-md border border-border p-4 hover:bg-nit-50 dark:hover:bg-nit-900/40 transition-all duration-200"><MessageSquare className="h-4 w-4 mb-2" />{t('boards.title')}</Link>
         </div>
       </div>
 
       <div className="card">
         <div className="card-header"><h2 className="card-title">最近開いた掲示板</h2></div>
         <div className="card-content">
-          {loading ? <p className="text-muted-foreground">読み込み中...</p> : recentBoards.length === 0 ? <p className="text-muted-foreground">最近開いた掲示板はありません。</p> : (
+          {loading ? <p className="text-steel-500">読み込み中...</p> : recentBoards.length === 0 ? <p className="text-steel-500">最近開いた掲示板はありません。</p> : (
             <div className="space-y-2">{recentBoards.map((board) => <Link key={board.id} to={`/boards/${board.id}`} className="block p-2 rounded hover:bg-accent">{board.title}</Link>)}</div>
           )}
         </div>
