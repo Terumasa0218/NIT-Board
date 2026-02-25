@@ -4,6 +4,7 @@ import { Mail, CheckCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useAuthStore } from '@/stores/auth'
 import { useI18n } from '@/utils/i18n'
+import { isAllowedEmail } from '@/constants/university'
 
 export default function RegisterPage() {
   const [email, setEmail] = useState('')
@@ -16,7 +17,7 @@ export default function RegisterPage() {
     e.preventDefault()
     const normalized = email.trim().toLowerCase()
 
-    if (!normalized.endsWith('@ict.nitech.ac.jp')) {
+    if (!isAllowedEmail(normalized)) {
       toast.error(t('auth.onlyNitechEmail'))
       return
     }

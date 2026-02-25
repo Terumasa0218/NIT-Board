@@ -78,7 +78,7 @@
     "subEmail": "通知用メールアドレス（任意）",
     "subEmailDescription": "GmailやiCloudなど普段使いのメールを登録すると、次回からそのメールでもログインできます",
     "subEmailPlaceholder": "Gmail / iCloud など",
-    "enterNitechEmail": "初めての方は名工大メール（@ict.nitech.ac.jp）で登録できます",
+    "enterNitechEmail": "初めての方は名工大メール（@ict.nitech.ac.jp または @stn.nitech.ac.jp）で登録できます",
     "orSubEmail": "名工大メールまたは登録済みメールアドレス",
     "emailNotFound": "このメールアドレスは登録されていません。初回は名工大メールで登録してください",
     "emailRequired": "メールアドレスを入力してください",
@@ -91,7 +91,7 @@
       "error": "認証に失敗しました。再度ログインしてください"
     },
     "email": "メールアドレス",
-    "onlyNitechEmail": "名古屋工業大学のメールアドレス（@ict.nitech.ac.jp）のみ使用できます"
+    "onlyNitechEmail": "名古屋工業大学のメールアドレス（@ict.nitech.ac.jp または @stn.nitech.ac.jp）のみ使用できます"
   },
   "images": {
     "dropzoneDescription": "画像をドロップ、またはクリックして選択",

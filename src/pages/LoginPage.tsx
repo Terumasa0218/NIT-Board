@@ -5,6 +5,7 @@ import toast from 'react-hot-toast'
 import { useAuthStore } from '@/stores/auth'
 import { useI18n } from '@/utils/i18n'
 import { getUserBySubEmail } from '@/repositories/usersRepository'
+import { isAllowedEmail } from '@/constants/university'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -31,7 +32,7 @@ export default function LoginPage() {
 
     setIsLoading(true)
     try {
-      if (normalized.endsWith('@ict.nitech.ac.jp')) {
+      if (isAllowedEmail(normalized)) {
         await sendMagicLink(normalized)
       } else {
         const user = await getUserBySubEmail(normalized)
