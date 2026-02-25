@@ -59,7 +59,26 @@
     },
     "login": "Log in",
     "createAccount": "Create account",
-    "logout": "Log out"
+    "logout": "Log out",
+    "sendLink": "Send sign-in link",
+    "checkEmail": "Check your email",
+    "magicLinkSent": "Please check your email and click the link",
+    "magicLinkError": "Failed to send sign-in link",
+    "subEmail": "Notification email (optional)",
+    "subEmailDescription": "Register your daily email like Gmail/iCloud to sign in with it next time",
+    "subEmailPlaceholder": "Gmail / iCloud etc",
+    "enterNitechEmail": "First-time users can register with @ict.nitech.ac.jp email",
+    "orSubEmail": "NITech email or registered sub email",
+    "emailNotFound": "This email is not registered. Please register first with your NITech email",
+    "emailRequired": "Please enter your email address",
+    "welcomeToNitechBoard": "Welcome to NITech Board",
+    "welcomeBack": "Welcome back",
+    "dontHaveAccount": "Don't have an account?",
+    "callback": {
+      "verifying": "Verifying sign-in link...",
+      "success": "Sign-in completed",
+      "error": "Sign-in failed. Please login again"
+    }
   },
   "images": {
     "dropzoneDescription": "Drop images here, or click to select",
@@ -158,5 +177,22 @@
     "overall": "Overall Ranking",
     "byDepartment": "Ranking by Department",
     "thisMonth": "Top Contributors This Month"
+  },
+  "post": {
+    "edit": "Edit",
+    "delete": "Delete",
+    "deleteConfirm": "Delete this post?",
+    "editSave": "Post updated",
+    "editCancel": "Failed to update post"
+  },
+  "board": {
+    "edit": "Edit board",
+    "delete": "Delete board",
+    "deleteConfirm": "Delete this board?",
+    "deleteWarning": "This action cannot be undone."
+  },
+  "thanks": {
+    "already": "Thanks",
+    "remove": "Remove thanks"
   }
 }

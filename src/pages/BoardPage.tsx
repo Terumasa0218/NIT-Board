@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
-import { Link, useParams } from 'react-router-dom'
-import { Calendar, Crown, ImagePlus, MapPin, MessageSquare, RefreshCw, Send, ThumbsUp, User as UserIcon, X } from 'lucide-react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Calendar, Crown, ImagePlus, MapPin, MessageSquare, RefreshCw, Send, ThumbsUp, User as UserIcon, X, MoreHorizontal } from 'lucide-react'
 import { useDropzone } from 'react-dropzone'
 import toast from 'react-hot-toast'
-import { getBoard, setBestAnswer } from '@/repositories/boardsRepository'
-import { createPost, incrementThanks, listPostsByBoard } from '@/repositories/postsRepository'
+import { deleteBoard, getBoard, setBestAnswer, updateBoard } from '@/repositories/boardsRepository'
+import { createPost, deletePost, getThankedPostIds, listPostsByBoard, toggleThanks, updatePost } from '@/repositories/postsRepository'
 import { getTopicById } from '@/repositories/topicsRepository'
 import { getUsersByIds } from '@/repositories/usersRepository'
 import type { Board, Post, Topic, User } from '@/types'
@@ -58,6 +58,7 @@ export default function BoardPage() {
   const authUser = useAuthStore((state) => state.user)
   const isGuest = useAuthStore((state) => state.isGuest)
   const { t } = useI18n()
+  const navigate = useNavigate()
   const authUserId = authUser?.id ?? null
 
   const [board, setBoard] = useState<Board | null>(null)
@@ -71,6 +72,7 @@ export default function BoardPage() {
   const [newPostText, setNewPostText] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [pendingThanksPostIds, setPendingThanksPostIds] = useState<Set<string>>(new Set())
+  const [thankedPostIds, setThankedPostIds] = useState<Set<string>>(new Set())
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [uploadingImages, setUploadingImages] = useState(false)
 
@@ -78,10 +80,10 @@ export default function BoardPage() {
   const [modalIndex, setModalIndex] = useState(0)
   const [isModalOpen, setIsModalOpen] = useState(false)
 
-  const isBoardOwner = useMemo(() => {
+  const canManageBoard = useMemo(() => {
     if (!board || !authUserId) return false
-    return board.createdBy === authUserId
-  }, [authUserId, board])
+    return board.createdBy === authUserId || authUser?.role === 'admin'
+  }, [authUser, authUserId, board])
 
   const updateRecentBoards = (id: string) => {
     const key = 'recentBoardIds'
@@ -148,6 +150,10 @@ export default function BoardPage() {
       const authorIds = result.map((post) => post.authorId)
       const boardOwnerId = currentBoard?.createdBy ? [currentBoard.createdBy] : []
       await fetchUsers([...authorIds, ...boardOwnerId])
+      if (authUserId) {
+        const thanked = await getThankedPostIds(authUserId, result.map((post) => post.id))
+        setThankedPostIds(thanked)
+      }
     } catch (error) {
       console.error(error)
       setErrorPosts('Failed to load posts')
@@ -258,9 +264,21 @@ export default function BoardPage() {
       return next
     })
     try {
-      await incrementThanks(postId)
-      await addPoints(postAuthorId, 'thanks_received', 5, postId)
-      setPosts((prev) => prev.map((post) => (post.id === postId ? { ...post, thanksCount: (post.thanksCount ?? 0) + 1 } : post)))
+      const result = await toggleThanks(postId, authUserId!)
+      if (result.thanked) {
+        await addPoints(postAuthorId, 'thanks_received', 5, postId)
+      }
+      setThankedPostIds((prev) => {
+        const next = new Set(prev)
+        if (result.thanked) next.add(postId)
+        else next.delete(postId)
+        return next
+      })
+      setPosts((prev) =>
+        prev.map((post) =>
+          post.id === postId ? { ...post, thanksCount: (post.thanksCount ?? 0) + (result.thanked ? 1 : -1) } : post,
+        ),
+      )
     } catch (error) {
       console.error(error)
       setErrorPosts('Failed to send thanks')
@@ -270,6 +288,66 @@ export default function BoardPage() {
         next.delete(postId)
         return next
       })
+    }
+  }
+
+  const handleEditPost = async (post: Post) => {
+    if (!authUserId) return
+    const canManage = post.authorId === authUserId || authUser?.role === 'admin'
+    if (!canManage) return
+    const nextText = window.prompt(t('post.edit'), post.text)
+    if (!nextText || !nextText.trim()) return
+    try {
+      await updatePost(post.id, { text: nextText.trim() })
+      setPosts((prev) => prev.map((item) => (item.id === post.id ? { ...item, text: nextText.trim() } : item)))
+      toast.success(t('post.editSave'))
+    } catch (error) {
+      console.error(error)
+      toast.error(t('post.editCancel'))
+    }
+  }
+
+  const handleDeletePost = async (post: Post) => {
+    if (!authUserId) return
+    const canManage = post.authorId === authUserId || authUser?.role === 'admin'
+    if (!canManage) return
+    if (!window.confirm(t('post.deleteConfirm'))) return
+    try {
+      await deletePost(post.id)
+      setPosts((prev) => prev.filter((item) => item.id !== post.id))
+      toast.success(t('post.delete'))
+    } catch (error) {
+      console.error(error)
+      toast.error(t('post.delete'))
+    }
+  }
+
+  const handleEditBoard = async () => {
+    if (!board || !canManageBoard) return
+    const title = window.prompt(t('board.edit'), board.title)
+    if (!title || !title.trim()) return
+    const description = window.prompt('description', board.description ?? '') ?? ''
+    try {
+      await updateBoard(board.id, { title: title.trim(), description: description.trim() })
+      setBoard((prev) => (prev ? { ...prev, title: title.trim(), description: description.trim() } : prev))
+      toast.success(t('board.edit'))
+    } catch (error) {
+      console.error(error)
+      toast.error(t('board.edit'))
+    }
+  }
+
+  const handleDeleteBoard = async () => {
+    if (!board || !canManageBoard) return
+    if (!window.confirm(`${t('board.deleteWarning')}
+${t('board.deleteConfirm')}`)) return
+    try {
+      await deleteBoard(board.id)
+      toast.success(t('board.delete'))
+      navigate('/boards')
+    } catch (error) {
+      console.error(error)
+      toast.error(t('board.delete'))
     }
   }
 
@@ -431,6 +509,12 @@ export default function BoardPage() {
             </div>
             <h1 className="text-2xl font-bold text-foreground">{board.title}</h1>
             {board.description && <p className="text-muted-foreground whitespace-pre-wrap">{board.description}</p>}
+            {canManageBoard && (
+              <div className="flex gap-2">
+                <button type="button" className="btn btn-outline btn-sm" onClick={handleEditBoard}>{t('board.edit')}</button>
+                <button type="button" className="btn btn-outline btn-sm text-destructive" onClick={handleDeleteBoard}>{t('board.delete')}</button>
+              </div>
+            )}
             <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
                 <UserIcon className="h-4 w-4" />
@@ -489,19 +573,25 @@ export default function BoardPage() {
                 </div>
                 <div className="flex items-center gap-3 mt-4">
                   <button
-                    className="inline-flex items-center gap-1 px-3 py-1 rounded bg-primary/10 text-primary text-sm disabled:opacity-50"
+                    className={`inline-flex items-center gap-1 px-3 py-1 rounded text-sm disabled:opacity-50 ${thankedPostIds.has(post.id) ? 'bg-emerald-500/10 text-emerald-600' : 'bg-primary/10 text-primary'}`}
                     onClick={() => handleIncrementThanks(post.id, post.authorId)}
                     disabled={pendingThanksPostIds.has(post.id) || isGuest}
                   >
-                    <ThumbsUp className="h-4 w-4" /> Thanks {post.thanksCount ?? 0}
+                    <ThumbsUp className="h-4 w-4" /> {thankedPostIds.has(post.id) ? t('thanks.remove') : t('thanks.already')} {post.thanksCount ?? 0}
                   </button>
-                  {isBoardOwner && !post.isBestAnswer && (
+                  {canManageBoard && !post.isBestAnswer && (
                     <button
                       className="inline-flex items-center gap-1 px-3 py-1 rounded bg-emerald-500/10 text-emerald-600 text-sm hover:bg-emerald-500/20"
                       onClick={() => handleSetBestAnswer(post.id, post.authorId)}
                     >
                       <Crown className="h-4 w-4" /> ベストアンサーにする
                     </button>
+                  )}
+                  {authUserId && (post.authorId === authUserId || authUser?.role === 'admin') && (
+                    <>
+                      <button className="inline-flex items-center gap-1 px-3 py-1 rounded bg-muted text-sm" onClick={() => handleEditPost(post)}><MoreHorizontal className="h-4 w-4" />{t('post.edit')}</button>
+                      <button className="inline-flex items-center gap-1 px-3 py-1 rounded bg-destructive/10 text-destructive text-sm" onClick={() => handleDeletePost(post)}>{t('post.delete')}</button>
+                    </>
                   )}
                 </div>
               </div>

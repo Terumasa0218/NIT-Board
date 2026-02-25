@@ -29,6 +29,7 @@ const CreateCirclePage = lazy(() => import('@/pages/CreateCirclePage'))
 const EditCirclePage = lazy(() => import('@/pages/EditCirclePage'))
 const CreateFeedbackPage = lazy(() => import('@/pages/CreateFeedbackPage'))
 const RankingPage = lazy(() => import('@/pages/RankingPage'))
+const AuthCallbackPage = lazy(() => import('@/pages/AuthCallbackPage'))
 
 function App() {
   const { user, loading, initializeAuth } = useAuthStore()
@@ -107,6 +108,7 @@ function App() {
           element={user ? <Navigate to="/" replace /> : <RegisterPage />}
         />
         <Route path="/profile-setup" element={<ProfileSetupPage />} />
+        <Route path="/auth/callback" element={<AuthCallbackPage />} />
 
         {/* Protected routes */}
         <Route
