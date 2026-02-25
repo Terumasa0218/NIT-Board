@@ -13,7 +13,7 @@ import { useAuthStore } from '@/stores/auth'
 import { DEFAULT_UNIVERSITY_ID } from '@/constants/university'
 import { normalizeYearParam } from '@/utils/boardsUrl'
 
-type SortType = 'latest' | 'popular' | 'unanswered'
+type SortType = 'latest' | 'popular' | 'unanswered' | 'postCount' | 'latestPost' | 'createdAt'
 const LAST_SELECTED_DEPT_KEY = 'nitboard:lastSelectedDepartmentId'
 export default function BoardsPage() {
   const { t, currentLocale } = useI18n()
@@ -21,6 +21,9 @@ export default function BoardsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [searchQuery, setSearchQuery] = useState('')
   const [sortType, setSortType] = useState<SortType>('latest')
+  const [subjectQuery, setSubjectQuery] = useState('')
+  const [periodFilter, setPeriodFilter] = useState<'week' | 'month' | 'all'>('all')
+  const [hasBestAnswerOnly, setHasBestAnswerOnly] = useState(false)
   const [boards, setBoards] = useState<Board[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [persistedDepartmentId, setPersistedDepartmentId] = useState<string | null>(null)
@@ -226,8 +229,23 @@ export default function BoardsPage() {
       result = result.filter(board => board.title.toLowerCase().includes(searchQuery.toLowerCase()))
     }
 
+    if (subjectQuery) {
+      result = result.filter((board) => board.title.toLowerCase().includes(subjectQuery.toLowerCase()))
+    }
+
+    if (periodFilter !== 'all') {
+      const now = Date.now()
+      const from = periodFilter === 'week' ? now - 7 * 24 * 60 * 60 * 1000 : now - 30 * 24 * 60 * 60 * 1000
+      result = result.filter((board) => board.createdAt.getTime() >= from)
+    }
+
+    if (hasBestAnswerOnly) {
+      result = result.filter((board) => !!board.bestAnswerPostId)
+    }
+
     switch (sortType) {
       case 'latest':
+      case 'latestPost':
         result.sort((a, b) => {
           const aTime = (a.latestPostAt || a.createdAt).getTime()
           const bTime = (b.latestPostAt || b.createdAt).getTime()
@@ -235,7 +253,11 @@ export default function BoardsPage() {
         })
         break
       case 'popular':
+      case 'postCount':
         result.sort((a, b) => b.postCount - a.postCount)
+        break
+      case 'createdAt':
+        result.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
         break
       case 'unanswered':
         result.sort((a, b) => Number(Boolean(a.latestPostAt)) - Number(Boolean(b.latestPostAt)))
@@ -243,7 +265,7 @@ export default function BoardsPage() {
     }
 
     return result
-  }, [boards, searchQuery, sortType])
+  }, [boards, searchQuery, sortType, subjectQuery, periodFilter, hasBestAnswerOnly])
 
   const handleSortChange = (newSortType: SortType) => {
     setSortType(newSortType)
@@ -453,7 +475,27 @@ export default function BoardsPage() {
               disabled={!currentTopic}
             />
           </div>
-          
+
+          <input
+            type="text"
+            placeholder={t('search.filters.subject')}
+            value={subjectQuery}
+            onChange={(e) => setSubjectQuery(e.target.value)}
+            className="input"
+            disabled={!currentTopic}
+          />
+
+          <select className="input" value={periodFilter} onChange={(e) => setPeriodFilter(e.target.value as 'week' | 'month' | 'all')}>
+            <option value="all">{t('search.filters.periodOptions.all')}</option>
+            <option value="month">{t('search.filters.periodOptions.month')}</option>
+            <option value="week">{t('search.filters.periodOptions.week')}</option>
+          </select>
+
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={hasBestAnswerOnly} onChange={(e) => setHasBestAnswerOnly(e.target.checked)} />
+            {t('search.filters.hasBestAnswer')}
+          </label>
+
           <div className="flex gap-2">
             <button
               onClick={() => handleSortChange('latest')}
@@ -480,6 +522,12 @@ export default function BoardsPage() {
               {t('boards.sort.unanswered')}
             </button>
           </div>
+
+          <select className="input" value={sortType} onChange={(e) => handleSortChange(e.target.value as SortType)} disabled={!currentTopic}>
+            <option value="postCount">{t('search.filters.sortOptions.postCount')}</option>
+            <option value="latestPost">{t('search.filters.sortOptions.latestPost')}</option>
+            <option value="createdAt">{t('search.filters.sortOptions.createdAt')}</option>
+          </select>
         </div>
       </div>
 

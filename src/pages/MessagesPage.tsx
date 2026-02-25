@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { Loader2, MessageSquare, Send } from 'lucide-react'
 import { listDmChatsForUser } from '@/repositories/chatsRepository'
 import { listMessages, sendMessage } from '@/repositories/messagesRepository'
-import { getUserById } from '@/repositories/usersRepository'
+import { getUsersByIds } from '@/repositories/usersRepository'
 import type { Chat, Message, User } from '@/types'
 import { useAuthStore } from '@/stores/auth'
 import { useAppStore } from '@/stores/appStore'
@@ -79,19 +79,26 @@ export default function MessagesPage() {
   const otherUser = otherUserId ? usersMap[otherUserId] : undefined
 
   const fetchUsers = async (ids: string[]) => {
-    const uniqueIds = Array.from(new Set(ids))
-    const result: Record<string, User> = {}
-    await Promise.all(
-      uniqueIds.map(async (id) => {
-        if (usersMap[id]) {
-          result[id] = usersMap[id]
-          return
+    const uniqueIds = Array.from(new Set(ids.filter(Boolean)))
+    if (uniqueIds.length === 0) return
+
+    const cachedUsers: Record<string, User> = {}
+    let missingIds = uniqueIds
+
+    setUsersMap((prev) => {
+      missingIds = uniqueIds.filter((id) => {
+        const cached = prev[id]
+        if (cached) {
+          cachedUsers[id] = cached
+          return false
         }
-        const fetched = await getUserById(id)
-        if (fetched) result[id] = fetched
-      }),
-    )
-    setUsersMap((prev) => ({ ...prev, ...result }))
+        return true
+      })
+      return prev
+    })
+
+    const fetchedUsers = missingIds.length > 0 ? await getUsersByIds(missingIds) : {}
+    setUsersMap((prev) => ({ ...prev, ...cachedUsers, ...fetchedUsers }))
   }
 
   const fetchChats = async () => {

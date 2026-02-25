@@ -25,7 +25,7 @@ interface AuthStore extends AuthState {
   enterGuestMode: () => void
   logout: () => Promise<void>
   setupProfile: (nickname: string, avatarUrl?: string, subEmail?: string) => Promise<void>
-  updateProfile: (updates: Partial<User>) => Promise<void>
+  updateProfile: (updates: Partial<User> & { subEmail?: string | null }) => Promise<void>
   fetchUserProfile: (userId?: string) => Promise<User | null>
   initializeAuth: () => Promise<() => void>
 }
@@ -186,7 +186,7 @@ export const useAuthStore = create<AuthStore>()(
         }
       },
 
-      updateProfile: async (updates: Partial<User>) => {
+      updateProfile: async (updates: Partial<User> & { subEmail?: string | null }) => {
         const { user } = get()
         if (!user) {
           const error = new Error('No user logged in') as Error & { code?: string }

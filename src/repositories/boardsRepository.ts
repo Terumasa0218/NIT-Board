@@ -11,6 +11,7 @@ import {
   updateDoc,
   deleteDoc,
   where,
+  documentId,
   type DocumentData,
   type DocumentSnapshot,
   type QueryConstraint,
@@ -188,6 +189,28 @@ export const getBoard = async (boardId: string): Promise<Board | null> => {
     return null
   }
   return toBoard(snapshot)
+}
+
+const BOARD_IDS_IN_LIMIT = 30
+
+const chunkArray = <T,>(items: T[], size: number): T[][] => {
+  const chunks: T[][] = []
+  for (let index = 0; index < items.length; index += size) {
+    chunks.push(items.slice(index, index + size))
+  }
+  return chunks
+}
+
+export const getBoardsByIds = async (boardIds: string[]): Promise<Board[]> => {
+  const uniqueIds = Array.from(new Set(boardIds.filter(Boolean)))
+  if (uniqueIds.length === 0) return []
+
+  const idChunks = chunkArray(uniqueIds, BOARD_IDS_IN_LIMIT)
+  const snapshots = await Promise.all(
+    idChunks.map((ids) => getDocs(query(getBoardsCollection(), where(documentId(), 'in', ids)))),
+  )
+
+  return snapshots.flatMap((snapshot) => snapshot.docs.map((docSnapshot) => toBoard(docSnapshot)))
 }
 
 export const buildBoardCreateDoc = (input: CreateBoardInput, now: BoardCreateNow) => {

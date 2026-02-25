@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { useAuthStore } from '@/stores/auth'
 import { useI18n } from '@/utils/i18n'
 import { useTheme } from '@/hooks/useTheme'
-import { Moon, Sun, Plus, User } from 'lucide-react'
+import { Moon, Sun, Plus, User, Search } from 'lucide-react'
 import LanguageToggle from './LanguageToggle'
 
 export default function Header() {
@@ -35,6 +35,10 @@ export default function Header() {
         </div>
 
         <div className="flex items-center gap-4">
+          <Link to="/search" className="btn btn-ghost btn-sm" title={t('search.title')}>
+            <Search className="h-4 w-4" />
+          </Link>
+
           <LanguageToggle />
 
           {user && (

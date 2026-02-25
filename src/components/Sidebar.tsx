@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom'
 import { useMemo } from 'react'
 import { useAuthStore } from '@/stores/auth'
 import { useI18n } from '@/utils/i18n'
-import { Home, Calendar, Settings, User, Layers, MessageSquare, Trophy, Users } from 'lucide-react'
+import { Home, Calendar, Settings, User, Layers, MessageSquare, Trophy, Users, Search } from 'lucide-react'
 
 export default function Sidebar() {
   const { user, isGuest } = useAuthStore()
@@ -36,6 +36,11 @@ export default function Sidebar() {
         to: '/ranking',
         icon: Trophy,
         label: t('nav.ranking'),
+      },
+      {
+        to: '/search',
+        icon: Search,
+        label: t('search.title'),
       },
       ...(showMemberLinks
         ? [
