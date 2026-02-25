@@ -44,7 +44,7 @@ export default function CirclesPage() {
   }, [circles, search])
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-4">
+    <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-4">
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-2xl font-bold">{t('circles.title')}</h1>
         {user && !isGuest && (
@@ -64,7 +64,7 @@ export default function CirclesPage() {
           <button
             key={option.key}
             onClick={() => setCategory(option.key)}
-            className={`px-3 py-1 rounded-full text-sm border ${category === option.key ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground'}`}
+            className={`px-3 py-1 rounded-full text-sm border ${category === option.key ? 'bg-nit-600 text-white border-nit-600' : 'bg-steel-100 text-steel-600 border-steel-200 dark:bg-steel-700 dark:text-steel-100 dark:border-steel-600'}`}
           >
             {t(option.label)}
           </button>
@@ -72,24 +72,24 @@ export default function CirclesPage() {
       </div>
 
       {loading ? (
-        <p className="text-muted-foreground">{t('circles.loading')}</p>
+        <p className="text-steel-500">{t('circles.loading')}</p>
       ) : filtered.length === 0 ? (
         <div className="rounded-lg border border-border bg-card p-8 text-center">
-          <Users className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
-          <p className="text-muted-foreground">{t('empty.circles')}</p>
-          <p className="text-sm text-muted-foreground mt-1">{t('empty.createFirst')}</p>
+          <Users className="h-12 w-12 mx-auto text-steel-400 mb-3" />
+          <p className="text-steel-500">{t('empty.circles')}</p>
+          <p className="text-sm text-steel-500 mt-1">{t('empty.createFirst')}</p>
           {user && !isGuest && <Link to="/circles/create" className="btn btn-primary btn-sm mt-4">{t('circles.create')}</Link>}
         </div>
       ) : (
         <div className="grid md:grid-cols-2 gap-4">
           {filtered.map((circle) => (
-            <Link key={circle.id} to={`/circles/${circle.id}`} className="rounded-lg border border-border bg-card p-4 hover:bg-accent/30">
+            <Link key={circle.id} to={`/circles/${circle.id}`} className="rounded-lg border border-border bg-card p-4 hover:bg-nit-50 dark:hover:bg-nit-900/40 transition-all duration-200">
               {circle.imageUrl && <img src={circle.imageUrl} alt={circle.name} className="w-full h-40 object-cover rounded mb-3" />}
               <div className="flex items-center gap-2 mb-2">
                 <h2 className="font-semibold text-lg">{circle.name}</h2>
-                <span className="text-xs px-2 py-1 rounded bg-primary/10 text-primary">{t(`circles.categories.${circle.category}`)}</span>
+                <span className="text-xs px-2 py-1 rounded bg-nit-100 dark:bg-nit-900/40 text-nit-600 dark:text-nit-400">{t(`circles.categories.${circle.category}`)}</span>
               </div>
-              <p className="text-sm text-muted-foreground line-clamp-2">{circle.description}</p>
+              <p className="text-sm text-steel-500 line-clamp-2">{circle.description}</p>
               <p className="text-sm mt-2">{circle.schedule}</p>
             </Link>
           ))}

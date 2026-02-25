@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { useAuthStore } from '@/stores/auth'
 import { useI18n } from '@/utils/i18n'
 import { useTheme } from '@/hooks/useTheme'
-import { Moon, Sun, Plus, User, Search, Bell } from 'lucide-react'
+import { Moon, Sun, Plus, User, Search, Bell, LogOut } from 'lucide-react'
 import LanguageToggle from './LanguageToggle'
 import { getUnreadCount } from '@/repositories/notificationsRepository'
 
@@ -47,9 +47,9 @@ export default function Header() {
   }
 
   return (
-    <header className="bg-card border-b border-border">
+    <header className="bg-white dark:bg-nit-900 border-b border-border">
       {isGuest && !user && (
-        <div className="border-b border-border bg-primary/5 px-6 py-2 flex items-center justify-between gap-3">
+        <div className="border-b border-border bg-nit-50 dark:bg-nit-900/60 px-4 sm:px-6 lg:px-8 py-2 flex items-center justify-between gap-3">
           <p className="text-sm text-foreground">{t('guest.bannerMessage')}</p>
           <div className="flex items-center gap-2 shrink-0">
             <Link to="/login" className="btn btn-outline btn-sm">{t('auth.login')}</Link>
@@ -57,12 +57,12 @@ export default function Header() {
           </div>
         </div>
       )}
-      <div className="h-16 flex items-center justify-between px-6">
+      <div className="h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-4">
-          <h1 className="text-xl font-semibold text-foreground">{t('appTitle')}</h1>
+          <h1 className="text-lg sm:text-xl font-bold tracking-wide text-nit-600 dark:text-nit-400">NITech Board</h1>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-3">
           <Link to="/search" className="btn btn-ghost btn-sm" title={t('search.title')}>
             <Search className="h-4 w-4" />
           </Link>
@@ -84,7 +84,7 @@ export default function Header() {
             <>
               <Link to="/boards/create" className="btn btn-primary btn-sm">
                 <Plus className="h-4 w-4" />
-                {t('boards.new')}
+                <span className="hidden sm:inline">{t('boards.new')}</span>
               </Link>
 
               <button
@@ -95,12 +95,13 @@ export default function Header() {
                 {resolvedTheme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
               </button>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 sm:gap-2">
                 <Link to="/profile" className="btn btn-ghost btn-sm">
                   <User className="h-4 w-4" />
                 </Link>
-                <button onClick={handleLogout} className="btn btn-ghost btn-sm">
-                  {t('auth.logout')}
+                <button onClick={handleLogout} className="btn btn-ghost btn-sm" title={t('auth.logout')}>
+                  <LogOut className="h-4 w-4 sm:hidden" />
+                  <span className="hidden sm:inline">{t('auth.logout')}</span>
                 </button>
               </div>
             </>

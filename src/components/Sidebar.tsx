@@ -12,45 +12,13 @@ export default function Sidebar() {
 
   const navItems = useMemo(
     () => [
-      {
-        to: '/',
-        icon: Home,
-        label: t('nav.home'),
-      },
-      {
-        to: '/boards',
-        icon: Layers,
-        label: t('boards.title'),
-      },
-      {
-        to: '/events',
-        icon: Calendar,
-        label: t('nav.events'),
-      },
-      {
-        to: '/circles',
-        icon: Users,
-        label: t('nav.circles'),
-      },
-      {
-        to: '/ranking',
-        icon: Trophy,
-        label: t('nav.ranking'),
-      },
-      {
-        to: '/search',
-        icon: Search,
-        label: t('search.title'),
-      },
-      ...(showMemberLinks
-        ? [
-            {
-              to: '/messages',
-              icon: MessageSquare,
-              label: t('nav.messages'),
-            },
-          ]
-        : []),
+      { to: '/', icon: Home, label: t('nav.home') },
+      { to: '/boards', icon: Layers, label: t('boards.title') },
+      { to: '/events', icon: Calendar, label: t('nav.events') },
+      { to: '/circles', icon: Users, label: t('nav.circles') },
+      { to: '/ranking', icon: Trophy, label: t('nav.ranking') },
+      { to: '/search', icon: Search, label: t('search.title') },
+      ...(showMemberLinks ? [{ to: '/messages', icon: MessageSquare, label: t('nav.messages') }] : []),
     ],
     [showMemberLinks, t],
   )
@@ -59,16 +27,8 @@ export default function Sidebar() {
     () => [
       ...(showMemberLinks
         ? [
-            {
-              to: '/profile',
-              icon: User,
-              label: t('nav.profile'),
-            },
-            {
-              to: '/settings',
-              icon: Settings,
-              label: t('nav.settings'),
-            },
+            { to: '/profile', icon: User, label: t('nav.profile') },
+            { to: '/settings', icon: Settings, label: t('nav.settings') },
           ]
         : []),
     ],
@@ -76,10 +36,10 @@ export default function Sidebar() {
   )
 
   return (
-    <div className="w-64 bg-card border-r border-border flex flex-col">
-      <div className="p-6 border-b border-border">
-        <h1 className="text-xl font-semibold text-foreground">{t('appTitle')}</h1>
-        <p className="text-sm text-muted-foreground mt-1">名古屋工業大学掲示板</p>
+    <div className="w-64 bg-nit-600 border-r border-nit-700/60 text-white flex flex-col">
+      <div className="p-6 border-b border-white/20">
+        <h1 className="text-xl font-bold tracking-wide text-white">NITech Board</h1>
+        <p className="text-xs text-white/80 mt-1">名古屋工業大学掲示板</p>
       </div>
 
       <nav className="flex-1 p-4 space-y-2">
@@ -88,10 +48,10 @@ export default function Sidebar() {
             key={item.to}
             to={item.to}
             className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+              `flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
                 isActive
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                  ? 'bg-white text-nit-600 shadow-sm'
+                  : 'text-white hover:bg-white/20 hover:text-white'
               }`
             }
           >
@@ -101,22 +61,22 @@ export default function Sidebar() {
         ))}
 
         {!showMemberLinks && (
-          <div className="mt-4 rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+          <div className="mt-4 rounded-md border border-white/30 bg-white/10 px-3 py-2 text-xs text-white/90">
             {t('guest.sidebarRestricted')}
           </div>
         )}
       </nav>
 
-      <div className="p-4 border-t border-border space-y-2">
+      <div className="p-4 border-t border-white/20 space-y-2">
         {bottomItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
             className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+              `flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
                 isActive
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                  ? 'bg-white text-nit-600 shadow-sm'
+                  : 'text-white hover:bg-white/20 hover:text-white'
               }`
             }
           >

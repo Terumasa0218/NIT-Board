@@ -331,7 +331,7 @@ export default function BoardsPage() {
 
   if (isLoading) {
     return (
-      <div className="max-w-4xl mx-auto p-6">
+      <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-muted rounded w-1/4"></div>
           <div className="h-10 bg-muted rounded"></div>
@@ -346,7 +346,7 @@ export default function BoardsPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       {/* Header */}
       <div className="mb-6">
       <div className="mb-4">
@@ -457,24 +457,24 @@ export default function BoardsPage() {
             </select>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="overflow-x-auto"><div className="flex flex-nowrap gap-2 pb-1">
             {availableTopics.map((topic) => (
               <button
                 key={topic.id}
                 onClick={() => handleTopicSelect(topic.id)}
-                className={`btn btn-sm ${
-                  topic.id === selectedTopicId ? 'btn-primary' : 'btn-outline'
+                className={`btn btn-sm border whitespace-nowrap ${
+                  topic.id === selectedTopicId ? 'bg-nit-600 text-white border-nit-600' : 'bg-steel-100 text-steel-600 border-steel-200 hover:bg-steel-200 dark:bg-steel-700 dark:text-steel-100 dark:border-steel-600'
                 }`}
                 disabled={!selectedDepartmentId}
               >
                 {currentLocale === 'en' ? topic.nameEn : topic.nameJa}
               </button>
             ))}
-          </div>
+          </div></div>
         </div>
 
         {/* Search and Sort */}
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex flex-wrap items-center gap-3">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
@@ -492,11 +492,11 @@ export default function BoardsPage() {
             placeholder={t('search.filters.subject')}
             value={subjectQuery}
             onChange={(e) => setSubjectQuery(e.target.value)}
-            className="input"
+            className="input min-w-[180px] flex-1"
             disabled={!currentTopic}
           />
 
-          <select className="input" value={periodFilter} onChange={(e) => setPeriodFilter(e.target.value as 'week' | 'month' | 'all')}>
+          <select className="input min-w-[140px]" value={periodFilter} onChange={(e) => setPeriodFilter(e.target.value as 'week' | 'month' | 'all')}>
             <option value="all">{t('search.filters.periodOptions.all')}</option>
             <option value="month">{t('search.filters.periodOptions.month')}</option>
             <option value="week">{t('search.filters.periodOptions.week')}</option>
@@ -504,10 +504,10 @@ export default function BoardsPage() {
 
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" checked={hasBestAnswerOnly} onChange={(e) => setHasBestAnswerOnly(e.target.checked)} />
-            {t('search.filters.hasBestAnswer')}
+            <span className="hidden sm:inline">{t('search.filters.hasBestAnswer')}</span><span className="sm:hidden">BA有り</span>
           </label>
 
-          <div className="flex gap-2">
+          <div className="overflow-x-auto w-full md:w-auto"><div className="flex gap-2 flex-nowrap pb-1">
             <button
               onClick={() => handleSortChange('latest')}
               className={`btn btn-sm ${sortType === 'latest' ? 'btn-primary' : 'btn-outline'}`}
@@ -532,9 +532,9 @@ export default function BoardsPage() {
               <MessageSquare className="h-4 w-4 mr-1" />
               {t('boards.sort.unanswered')}
             </button>
-          </div>
+          </div></div>
 
-          <select className="input" value={sortType} onChange={(e) => handleSortChange(e.target.value as SortType)} disabled={!currentTopic}>
+          <select className="input min-w-[180px]" value={sortType} onChange={(e) => handleSortChange(e.target.value as SortType)} disabled={!currentTopic}>
             <option value="postCount">{t('search.filters.sortOptions.postCount')}</option>
             <option value="latestPost">{t('search.filters.sortOptions.latestPost')}</option>
             <option value="createdAt">{t('search.filters.sortOptions.createdAt')}</option>
@@ -545,7 +545,7 @@ export default function BoardsPage() {
       {/* Boards List */}
       {!selectedDepartmentId ? (
         <div className="text-center py-12 space-y-3">
-          <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
+          <MessageSquare className="h-12 w-12 text-steel-400 mx-auto mb-2" />
           <h3 className="text-lg font-medium text-foreground">学科を選択してください</h3>
           <p className="text-muted-foreground">
             上部のセレクトから学科を選ぶとトピック一覧が表示されます。選択内容はブラウザに保存され、次回以降も引き継がれます。
@@ -561,7 +561,7 @@ export default function BoardsPage() {
         </div>
       ) : !currentTopic ? (
         <div className="text-center py-12 space-y-3">
-          <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
+          <MessageSquare className="h-12 w-12 text-steel-400 mx-auto mb-2" />
           <h3 className="text-lg font-medium text-foreground">トピックを選択してください</h3>
           <p className="text-muted-foreground">
             学科に合わせて表示されたトピックから選んでください。
@@ -569,7 +569,7 @@ export default function BoardsPage() {
         </div>
       ) : filteredBoards.length === 0 ? (
         <div className="text-center py-12 space-y-3">
-          <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
+          <MessageSquare className="h-12 w-12 text-steel-400 mx-auto mb-2" />
           <h3 className="text-lg font-medium text-foreground mb-2">
             {t('empty.boards')}
           </h3>
@@ -588,7 +588,7 @@ export default function BoardsPage() {
             <Link
               key={board.id}
               to={`/boards/${board.id}`}
-              className="card hover:shadow-md transition-shadow"
+              className="card border-l-4 border-l-nit-500 bg-white dark:bg-steel-800 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
             >
               <div className="card-content">
                 <div className="flex items-start justify-between">
@@ -597,7 +597,7 @@ export default function BoardsPage() {
                       {board.title}
                     </h3>
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <span className="bg-primary/10 text-primary px-2 py-1 rounded text-xs">
+                      <span className="bg-steel-100 text-steel-600 px-2 py-1 rounded text-xs">
                         {topicLabel}
                       </span>
                       <span className="flex items-center gap-1">
