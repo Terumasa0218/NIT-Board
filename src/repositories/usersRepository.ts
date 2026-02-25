@@ -6,10 +6,12 @@ import {
   runTransaction,
   serverTimestamp,
   updateDoc,
+  deleteDoc,
   where,
   query,
   orderBy,
   limit,
+  documentId,
   type DocumentData,
   type DocumentSnapshot,
 } from 'firebase/firestore'
@@ -76,27 +78,34 @@ export const getUserById = async (userId: string): Promise<User | null> => {
   return toUser(snapshot)
 }
 
+const USERS_IDS_IN_LIMIT = 30
+
+const chunkArray = <T,>(items: T[], size: number): T[][] => {
+  const chunks: T[][] = []
+  for (let index = 0; index < items.length; index += size) {
+    chunks.push(items.slice(index, index + size))
+  }
+  return chunks
+}
+
 export const getUsersByIds = async (userIds: string[]): Promise<Record<string, User>> => {
   if (userIds.length === 0) return {}
 
   const result: Record<string, User> = {}
-  const uniqueIds = Array.from(new Set(userIds))
+  const uniqueIds = Array.from(new Set(userIds.filter(Boolean)))
+  if (uniqueIds.length === 0) return result
 
-  if (uniqueIds.length <= 10) {
-    const usersQuery = query(usersCollection, where('__name__', 'in', uniqueIds))
-    const snapshot = await getDocs(usersQuery)
+  const idChunks = chunkArray(uniqueIds, USERS_IDS_IN_LIMIT)
+  const snapshots = await Promise.all(
+    idChunks.map((ids) => getDocs(query(usersCollection, where(documentId(), 'in', ids)))),
+  )
+
+  snapshots.forEach((snapshot) => {
     snapshot.docs.forEach((docSnapshot) => {
       result[docSnapshot.id] = toUser(docSnapshot)
     })
-    return result
-  }
-
-  const docs = await Promise.all(uniqueIds.map((id) => getDoc(doc(usersCollection, id))))
-  docs.forEach((docSnapshot) => {
-    if (docSnapshot.exists()) {
-      result[docSnapshot.id] = toUser(docSnapshot)
-    }
   })
+
   return result
 }
 
@@ -224,6 +233,11 @@ export const getUserRankByPoints = async (userId: string, departmentId?: string)
   return snapshot.size + 1
 }
 
+
+
+export const deleteUserById = async (userId: string): Promise<void> => {
+  await deleteDoc(doc(usersCollection, userId))
+}
 
 export const getUserBySubEmail = async (email: string): Promise<User | null> => {
   const usersQuery = query(usersCollection, where('subEmail', '==', email), limit(1))

@@ -30,6 +30,7 @@ const EditCirclePage = lazy(() => import('@/pages/EditCirclePage'))
 const CreateFeedbackPage = lazy(() => import('@/pages/CreateFeedbackPage'))
 const RankingPage = lazy(() => import('@/pages/RankingPage'))
 const AuthCallbackPage = lazy(() => import('@/pages/AuthCallbackPage'))
+const SearchPage = lazy(() => import('@/pages/SearchPage'))
 
 function App() {
   const { user, loading, initializeAuth } = useAuthStore()
@@ -139,6 +140,7 @@ function App() {
           />
           <Route path="events" element={<EventsPage />} />
           <Route path="ranking" element={<RankingPage />} />
+          <Route path="search" element={<SearchPage />} />
           <Route path="circles" element={<CirclesPage />} />
           <Route path="circles/:circleId" element={<CircleDetailPage />} />
           <Route path="circles/create" element={needsProfileSetup ? <Navigate to="/profile-setup" replace /> : <CreateCirclePage />} />

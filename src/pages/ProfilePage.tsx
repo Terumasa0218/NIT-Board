@@ -5,7 +5,7 @@ import { BookOpen, Crown, Edit2, ImagePlus, Loader2, MessageCircle, ThumbsUp, Us
 import { useAuthStore } from '@/stores/auth'
 import { getUserById, followUser, unfollowUser } from '@/repositories/usersRepository'
 import { listPostsByAuthor } from '@/repositories/postsRepository'
-import { getBoard } from '@/repositories/boardsRepository'
+import { getBoardsByIds } from '@/repositories/boardsRepository'
 import { getOrCreateDmChat } from '@/repositories/chatsRepository'
 import type { Board, User } from '@/types'
 import toast from 'react-hot-toast'
@@ -111,10 +111,10 @@ export default function ProfilePage() {
       const answers = posts.length
       const thanks = posts.reduce((sum, post) => sum + (post.thanksCount ?? 0), 0)
       const boardIds = Array.from(new Set(posts.map((p) => p.boardId)))
-      const boards = await Promise.all(boardIds.map((id) => getBoard(id)))
+      const boards = await getBoardsByIds(boardIds)
       const boardMap: Record<string, Board> = {}
-      boards.forEach((b) => {
-        if (b) boardMap[b.id] = b
+      boards.forEach((board) => {
+        boardMap[board.id] = board
       })
       const bestAnswers = posts.filter((post) => boardMap[post.boardId]?.bestAnswerPostId === post.id).length
       setStats({ answers, thanks, bestAnswers })

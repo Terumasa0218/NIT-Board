@@ -92,7 +92,8 @@
   },
   "common": {
     "edit": "編集",
-    "delete": "削除"
+    "delete": "削除",
+    "save": "保存"
   },
   "circles": {
     "title": "サークル",
@@ -194,5 +195,56 @@
   "thanks": {
     "already": "Thanks",
     "remove": "Thanksを取り消す"
+  },
+  "settings": {
+    "theme": "テーマ",
+    "themeOptions": {
+      "dark": "ダーク",
+      "light": "ライト",
+      "system": "システム"
+    },
+    "language": "言語",
+    "subEmail": "サブメール",
+    "account": "アカウント情報",
+    "logout": "ログアウト",
+    "logoutConfirm": "ログアウトしますか？",
+    "deleteAccount": "アカウントを削除する",
+    "deleteAccountConfirm": "全てのデータが削除されます。この操作は取り消せません。削除しますか？",
+    "deleteAccountWarning": "本当に削除しますか？",
+    "saved": "保存しました",
+    "subEmailSaveFailed": "サブメールの保存に失敗しました",
+    "subEmailDeleted": "サブメールを削除しました",
+    "subEmailDeleteFailed": "サブメールの削除に失敗しました",
+    "logoutFailed": "ログアウトに失敗しました",
+    "accountDeleted": "アカウントを削除しました",
+    "deleteAccountFailed": "アカウント削除に失敗しました。再認証が必要な場合があります。",
+    "subEmailPlaceholder": "example@gmail.com"
+  },
+  "search": {
+    "title": "検索",
+    "placeholder": "キーワードを入力",
+    "tabs": {
+      "boards": "掲示板",
+      "posts": "投稿",
+      "circles": "サークル"
+    },
+    "noResults": "検索結果がありません",
+    "filters": {
+      "period": "期間",
+      "sort": "並び順",
+      "hasBestAnswer": "ベストアンサーあり",
+      "subject": "科目名で絞り込み",
+      "periodOptions": {
+        "week": "最近1週間",
+        "month": "最近1ヶ月",
+        "all": "全期間"
+      },
+      "sortOptions": {
+        "postCount": "投稿数順",
+        "latestPost": "最新投稿順",
+        "createdAt": "作成日順"
+      }
+    },
+    "failed": "検索に失敗しました"
   }
 }
