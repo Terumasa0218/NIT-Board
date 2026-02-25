@@ -46,6 +46,7 @@ export default function ProfilePage() {
   const [circles, setCircles] = useState('')
   const [bio, setBio] = useState('')
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
+  const [subEmail, setSubEmail] = useState('')
 
   const isOwnProfile = useMemo(() => {
     if (userId) {
@@ -93,6 +94,7 @@ export default function ProfilePage() {
         setGrade(fetched.grade || '')
         setCircles((fetched.circles || []).join(', '))
         setBio(fetched.bio || '')
+        setSubEmail(fetched.subEmail || '')
       }
     } catch (error) {
       console.error(error)
@@ -171,6 +173,7 @@ export default function ProfilePage() {
         grade,
         circles: circlesArray,
         bio,
+        subEmail: subEmail || undefined,
         avatarUrl: nextAvatarUrl,
       })
       await loadProfile()
@@ -350,6 +353,7 @@ export default function ProfilePage() {
               <span>{profile.circles && profile.circles.length > 0 ? profile.circles.join(', ') : '所属サークル未設定'}</span>
             </div>
             <p className="text-foreground whitespace-pre-wrap">{profile.bio || '自己紹介はまだありません'}</p>
+            {profile.subEmail && <p className="text-xs">サブメール: {profile.subEmail}</p>}
           </div>
         </div>
       )}
@@ -401,6 +405,10 @@ export default function ProfilePage() {
             <div className="space-y-1">
               <label className="text-sm text-muted-foreground">所属サークル（カンマ区切り）</label>
               <input type="text" value={circles} onChange={(e) => setCircles(e.target.value)} className="input w-full" />
+            </div>
+            <div className="space-y-1 md:col-span-2">
+              <label className="text-sm text-muted-foreground">通知用メールアドレス（任意）</label>
+              <input type="email" value={subEmail} onChange={(e) => setSubEmail(e.target.value)} className="input w-full" placeholder="Gmail / iCloud など" />
             </div>
             <div className="space-y-1">
               <label className="text-sm text-muted-foreground">アバター画像</label>

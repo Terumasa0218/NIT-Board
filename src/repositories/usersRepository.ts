@@ -61,6 +61,7 @@ const toUser = (snapshot: DocumentSnapshot<DocumentData>): User => {
     preferredLocale: data.preferredLocale || 'ja',
     points: data.points ?? 0,
     badges: data.badges || [],
+    subEmail: data.subEmail ?? undefined,
     createdAt: data.createdAt?.toDate() || new Date(),
     updatedAt: data.updatedAt?.toDate() || new Date(),
   }
@@ -109,6 +110,7 @@ export const updateUserProfile = async (
     circles?: string[]
     bio?: string
     avatarUrl?: string | null
+    subEmail?: string | null
   },
 ): Promise<void> => {
   const userRef = doc(usersCollection, userId)
@@ -128,6 +130,7 @@ export const updateUserProfile = async (
   if (input.circles !== undefined) updateData.circles = input.circles
   if (input.bio !== undefined) updateData.bio = input.bio
   if (input.avatarUrl !== undefined) updateData.avatarUrl = input.avatarUrl ?? null
+  if (input.subEmail !== undefined) updateData.subEmail = input.subEmail ?? null
 
   await updateDoc(userRef, updateData)
 }
@@ -219,4 +222,12 @@ export const getUserRankByPoints = async (userId: string, departmentId?: string)
   const rankQuery = query(base, where('points', '>', current.points ?? 0))
   const snapshot = await getDocs(rankQuery)
   return snapshot.size + 1
+}
+
+
+export const getUserBySubEmail = async (email: string): Promise<User | null> => {
+  const usersQuery = query(usersCollection, where('subEmail', '==', email), limit(1))
+  const snapshot = await getDocs(usersQuery)
+  if (snapshot.empty) return null
+  return toUser(snapshot.docs[0])
 }

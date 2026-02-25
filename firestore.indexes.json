@@ -4,87 +4,178 @@
       "collectionGroup": "boards",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "universityId", "mode": "ASCENDING" },
-        { "fieldPath": "createdAt", "mode": "DESCENDING" }
+        {
+          "fieldPath": "universityId",
+          "mode": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "mode": "DESCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "boards",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "universityId", "mode": "ASCENDING" },
-        { "fieldPath": "topicId", "mode": "ASCENDING" },
-        { "fieldPath": "createdAt", "mode": "DESCENDING" }
+        {
+          "fieldPath": "universityId",
+          "mode": "ASCENDING"
+        },
+        {
+          "fieldPath": "topicId",
+          "mode": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "mode": "DESCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "boards",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "universityId", "mode": "ASCENDING" },
-        { "fieldPath": "boardType", "mode": "ASCENDING" },
-        { "fieldPath": "eventStartAt", "mode": "ASCENDING" }
+        {
+          "fieldPath": "universityId",
+          "mode": "ASCENDING"
+        },
+        {
+          "fieldPath": "boardType",
+          "mode": "ASCENDING"
+        },
+        {
+          "fieldPath": "eventStartAt",
+          "mode": "ASCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "boards",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "universityId", "mode": "ASCENDING" },
-        { "fieldPath": "updatedAt", "mode": "DESCENDING" }
+        {
+          "fieldPath": "universityId",
+          "mode": "ASCENDING"
+        },
+        {
+          "fieldPath": "updatedAt",
+          "mode": "DESCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "posts",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "boardId", "mode": "ASCENDING" },
-        { "fieldPath": "createdAt", "mode": "ASCENDING" }
+        {
+          "fieldPath": "boardId",
+          "mode": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "mode": "ASCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "posts",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "boardId", "mode": "ASCENDING" },
-        { "fieldPath": "createdAt", "mode": "DESCENDING" }
+        {
+          "fieldPath": "boardId",
+          "mode": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "mode": "DESCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "posts",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "authorId", "mode": "ASCENDING" },
-        { "fieldPath": "createdAt", "mode": "DESCENDING" }
+        {
+          "fieldPath": "authorId",
+          "mode": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "mode": "DESCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "chats",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "participantIds", "arrayConfig": "CONTAINS" },
-        { "fieldPath": "universityId", "mode": "ASCENDING" },
-        { "fieldPath": "type", "mode": "ASCENDING" },
-        { "fieldPath": "updatedAt", "mode": "DESCENDING" }
+        {
+          "fieldPath": "participantIds",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "universityId",
+          "mode": "ASCENDING"
+        },
+        {
+          "fieldPath": "type",
+          "mode": "ASCENDING"
+        },
+        {
+          "fieldPath": "updatedAt",
+          "mode": "DESCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "messages",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "chatId", "mode": "ASCENDING" },
-        { "fieldPath": "createdAt", "mode": "ASCENDING" }
+        {
+          "fieldPath": "chatId",
+          "mode": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "mode": "ASCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "boards",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "universityId", "mode": "ASCENDING" },
-        { "fieldPath": "departmentId", "mode": "ASCENDING" },
-        { "fieldPath": "year", "mode": "ASCENDING" },
-        { "fieldPath": "topicId", "mode": "ASCENDING" },
-        { "fieldPath": "createdAt", "mode": "DESCENDING" }
+        {
+          "fieldPath": "universityId",
+          "mode": "ASCENDING"
+        },
+        {
+          "fieldPath": "departmentId",
+          "mode": "ASCENDING"
+        },
+        {
+          "fieldPath": "year",
+          "mode": "ASCENDING"
+        },
+        {
+          "fieldPath": "topicId",
+          "mode": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "mode": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "subEmail",
+          "mode": "ASCENDING"
+        }
       ]
     }
   ],

@@ -1,14 +1,14 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import {
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
   signOut,
-  sendEmailVerification,
-  sendPasswordResetEmail,
   onAuthStateChanged,
   User as FirebaseUser,
   Auth,
+  sendSignInLinkToEmail,
+  isSignInWithEmailLink,
+  signInWithEmailLink,
+  getAdditionalUserInfo,
 } from 'firebase/auth'
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore'
 import { auth, db } from '@/firebase'
@@ -17,15 +17,14 @@ import { DEFAULT_UNIVERSITY_ID } from '@/constants/university'
 import { getUserById, updateUserProfile as updateUserProfileRepo } from '@/repositories/usersRepository'
 
 let initializationInProgress = false
+const MAGIC_LINK_EMAIL_KEY = 'magicLinkEmail'
 
 interface AuthStore extends AuthState {
-  login: (email: string, password: string) => Promise<void>
-  register: (email: string, password: string) => Promise<void>
+  sendMagicLink: (email: string) => Promise<void>
+  completeMagicLinkSignIn: () => Promise<{ isNewUser: boolean }>
   enterGuestMode: () => void
   logout: () => Promise<void>
-  sendVerificationEmail: () => Promise<void>
-  sendPasswordReset: (email: string) => Promise<void>
-  setupProfile: (nickname: string, avatarUrl?: string) => Promise<void>
+  setupProfile: (nickname: string, avatarUrl?: string, subEmail?: string) => Promise<void>
   updateProfile: (updates: Partial<User>) => Promise<void>
   fetchUserProfile: (userId?: string) => Promise<User | null>
   initializeAuth: () => Promise<() => void>
@@ -50,9 +49,11 @@ const createUserDocument = async (
   firebaseUser: FirebaseUser,
   nickname: string,
   avatarUrl?: string,
+  subEmail?: string,
 ): Promise<User> => {
   const userData: Omit<User, 'id'> = {
     email: firebaseUser.email!,
+    subEmail,
     nickname,
     avatarUrl,
     universityId: DEFAULT_UNIVERSITY_ID,
@@ -86,29 +87,8 @@ const createUserDocument = async (
     updatedAt: serverTimestamp(),
   }
 
-  if (userData.avatarUrl !== undefined) {
-    docData.avatarUrl = userData.avatarUrl
-  }
-
-  if (userData.departmentId !== undefined) {
-    docData.departmentId = userData.departmentId
-  }
-
-  if (userData.grade !== undefined) {
-    docData.grade = userData.grade
-  }
-
-  if (userData.circles !== undefined) {
-    docData.circles = userData.circles
-  }
-
-  if (userData.bio !== undefined) {
-    docData.bio = userData.bio
-  }
-
-  if (userData.suspendedUntil !== undefined) {
-    docData.suspendedUntil = userData.suspendedUntil
-  }
+  if (userData.avatarUrl !== undefined) docData.avatarUrl = userData.avatarUrl
+  if (userData.subEmail !== undefined) docData.subEmail = userData.subEmail
 
   await setDoc(userRef, docData)
 
@@ -137,6 +117,14 @@ const ensureUserRecord = async (firebaseUser: FirebaseUser): Promise<User> => {
   return createUserDocument(firebaseUser, nickname, avatarUrl)
 }
 
+const buildActionCodeSettings = () => {
+  const appUrl = import.meta.env.VITE_APP_URL || window.location.origin
+  return {
+    url: `${appUrl}/auth/callback`,
+    handleCodeInApp: true,
+  }
+}
+
 export const useAuthStore = create<AuthStore>()(
   persist(
     (set, get) => ({
@@ -145,41 +133,29 @@ export const useAuthStore = create<AuthStore>()(
       isGuest: false,
       loading: true,
 
-      login: async (email: string, password: string) => {
-        set({ loading: true })
-        try {
-          const userCredential = await signInWithEmailAndPassword(auth, email, password)
-          const firebaseUser = userCredential.user
-
-          if (!firebaseUser.emailVerified) {
-            throw new Error('EMAIL_NOT_VERIFIED')
-          }
-
-          const userDoc = await ensureUserRecord(firebaseUser)
-          if (userDoc.suspendedUntil && userDoc.suspendedUntil > new Date()) {
-            throw new Error('USER_SUSPENDED')
-          }
-          set({ user: userDoc, userProfile: userDoc, isGuest: false, loading: false })
-        } catch (error) {
-          console.error('AuthStore: Login error:', error)
-          set({ loading: false })
-          throw error
-        }
+      sendMagicLink: async (email: string) => {
+        await sendSignInLinkToEmail(auth, email, buildActionCodeSettings())
+        localStorage.setItem(MAGIC_LINK_EMAIL_KEY, email)
       },
 
-      register: async (email: string, password: string) => {
-        set({ loading: true })
-        try {
-          const userCredential = await createUserWithEmailAndPassword(auth, email, password)
-          const firebaseUser = userCredential.user
-
-          await sendEmailVerification(firebaseUser)
-
-          set({ loading: false })
-        } catch (error) {
-          set({ loading: false })
-          throw error
+      completeMagicLinkSignIn: async () => {
+        if (!isSignInWithEmailLink(auth, window.location.href)) {
+          throw new Error('INVALID_MAGIC_LINK')
         }
+
+        const storedEmail = localStorage.getItem(MAGIC_LINK_EMAIL_KEY)
+        if (!storedEmail) {
+          throw new Error('EMAIL_NOT_FOUND')
+        }
+
+        const credential = await signInWithEmailLink(auth, storedEmail, window.location.href)
+        localStorage.removeItem(MAGIC_LINK_EMAIL_KEY)
+        const userDoc = await ensureUserRecord(credential.user)
+        if (userDoc.suspendedUntil && userDoc.suspendedUntil > new Date()) {
+          throw new Error('USER_SUSPENDED')
+        }
+        const info = getAdditionalUserInfo(credential)
+        return { isNewUser: !!info?.isNewUser }
       },
 
       enterGuestMode: () => {
@@ -197,26 +173,12 @@ export const useAuthStore = create<AuthStore>()(
         }
       },
 
-      sendVerificationEmail: async () => {
-        const { user } = get()
-        if (!user) throw new Error('No user logged in')
-
-        const firebaseUser = auth.currentUser
-        if (!firebaseUser) throw new Error('No Firebase user')
-
-        await sendEmailVerification(firebaseUser)
-      },
-
-      sendPasswordReset: async (email: string) => {
-        await sendPasswordResetEmail(auth, email)
-      },
-
-      setupProfile: async (nickname: string, avatarUrl?: string) => {
+      setupProfile: async (nickname: string, avatarUrl?: string, subEmail?: string) => {
         const firebaseUser = auth.currentUser
         if (!firebaseUser) throw new Error('No Firebase user')
 
         try {
-          const userDoc = await createUserDocument(firebaseUser, nickname, avatarUrl)
+          const userDoc = await createUserDocument(firebaseUser, nickname, avatarUrl, subEmail)
           set({ user: userDoc, userProfile: userDoc, isGuest: false, loading: false })
         } catch (error) {
           console.error('AuthStore: Profile setup failed:', error)
@@ -284,11 +246,6 @@ export const useAuthStore = create<AuthStore>()(
         const handleUserState = async (firebaseUser: FirebaseUser | null) => {
           if (!firebaseUser) {
             set((state) => ({ user: null, userProfile: null, isGuest: state.isGuest, loading: false }))
-            return
-          }
-
-          if (!firebaseUser.emailVerified) {
-            set((state) => ({ loading: false, user: null, userProfile: null, isGuest: state.isGuest }))
             return
           }
 

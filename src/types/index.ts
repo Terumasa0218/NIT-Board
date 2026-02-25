@@ -1,6 +1,7 @@
 export interface User {
   id: string
   email: string
+  subEmail?: string
   nickname: string
   role?: 'admin' | 'user'
   universityId?: string

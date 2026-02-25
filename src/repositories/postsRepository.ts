@@ -1,5 +1,6 @@
 import {
   collection,
+  deleteDoc,
   doc,
   getDoc,
   getDocs,
@@ -22,6 +23,7 @@ import { addPoints } from '@/utils/points'
 
 const postsCollection = collection(db, 'posts')
 const boardsCollection = collection(db, 'boards')
+const likesCollection = collection(db, 'likes')
 
 const toPost = (snapshot: QueryDocumentSnapshot<DocumentData> | DocumentSnapshot<DocumentData>): Post => {
   const data = snapshot.data()
@@ -104,10 +106,77 @@ export const createPost = async (input: {
   return toPost(createdSnapshot)
 }
 
-export const incrementThanks = async (postId: string): Promise<void> => {
+export const toggleThanks = async (postId: string, userId: string): Promise<{ thanked: boolean }> => {
   const postRef = doc(postsCollection, postId)
-  await updateDoc(postRef, {
-    thanksCount: increment(1),
+  const likeRef = doc(likesCollection, `${userId}_${postId}`)
+
+  return runTransaction(db, async (transaction) => {
+    const [postSnapshot, likeSnapshot] = await Promise.all([transaction.get(postRef), transaction.get(likeRef)])
+
+    if (!postSnapshot.exists()) {
+      throw new Error('Post not found')
+    }
+
+    if (likeSnapshot.exists()) {
+      transaction.delete(likeRef)
+      transaction.update(postRef, {
+        thanksCount: increment(-1),
+        updatedAt: serverTimestamp(),
+      })
+      return { thanked: false }
+    }
+
+    const postData = postSnapshot.data() as DocumentData
+    transaction.set(likeRef, {
+      postId,
+      userId,
+      universityId: postData.universityId || DEFAULT_UNIVERSITY_ID,
+      createdAt: serverTimestamp(),
+    })
+    transaction.update(postRef, {
+      thanksCount: increment(1),
+      updatedAt: serverTimestamp(),
+    })
+    return { thanked: true }
+  })
+}
+
+export const getThankedPostIds = async (userId: string, postIds: string[]): Promise<Set<string>> => {
+  if (postIds.length === 0) return new Set<string>()
+  const checks = await Promise.all(postIds.map((postId) => getDoc(doc(likesCollection, `${userId}_${postId}`))))
+  return new Set(checks.filter((snap) => snap.exists()).map((snap) => (snap.data()?.postId as string) ?? snap.id.replace(`${userId}_`, '')))
+}
+
+export const updatePost = async (postId: string, input: { text: string }): Promise<void> => {
+  await updateDoc(doc(postsCollection, postId), {
+    text: input.text,
     updatedAt: serverTimestamp(),
   })
+}
+
+export const deletePost = async (postId: string): Promise<void> => {
+  const postRef = doc(postsCollection, postId)
+  await runTransaction(db, async (transaction) => {
+    const postSnapshot = await transaction.get(postRef)
+    if (!postSnapshot.exists()) {
+      return
+    }
+
+    const data = postSnapshot.data() as DocumentData
+    const boardId = data.boardId
+
+    if (boardId) {
+      const boardRef = doc(boardsCollection, boardId)
+      transaction.update(boardRef, {
+        postCount: increment(-1),
+        updatedAt: serverTimestamp(),
+      })
+    }
+
+    transaction.delete(postRef)
+  })
+}
+
+export const removeLikeById = async (likeId: string): Promise<void> => {
+  await deleteDoc(doc(likesCollection, likeId))
 }

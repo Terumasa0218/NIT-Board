@@ -59,7 +59,26 @@
     },
     "login": "ログイン",
     "createAccount": "アカウント作成",
-    "logout": "ログアウト"
+    "logout": "ログアウト",
+    "sendLink": "ログインリンクを送信",
+    "checkEmail": "メールを確認してください",
+    "magicLinkSent": "メールを確認してリンクをクリックしてください",
+    "magicLinkError": "ログインリンクの送信に失敗しました",
+    "subEmail": "通知用メールアドレス（任意）",
+    "subEmailDescription": "GmailやiCloudなど普段使いのメールを登録すると、次回からそのメールでもログインできます",
+    "subEmailPlaceholder": "Gmail / iCloud など",
+    "enterNitechEmail": "初めての方は名工大メール（@ict.nitech.ac.jp）で登録できます",
+    "orSubEmail": "名工大メールまたは登録済みメールアドレス",
+    "emailNotFound": "このメールアドレスは登録されていません。初回は名工大メールで登録してください",
+    "emailRequired": "メールアドレスを入力してください",
+    "welcomeToNitechBoard": "NITech Boardへようこそ",
+    "welcomeBack": "おかえりなさい",
+    "dontHaveAccount": "アカウントをお持ちでないですか？",
+    "callback": {
+      "verifying": "認証を確認中です...",
+      "success": "認証に成功しました",
+      "error": "認証に失敗しました。再度ログインしてください"
+    }
   },
   "images": {
     "dropzoneDescription": "画像をドロップ、またはクリックして選択",
@@ -158,5 +177,22 @@
     "overall": "全体ランキング",
     "byDepartment": "学科別ランキング",
     "thisMonth": "今月の貢献者"
+  },
+  "post": {
+    "edit": "編集",
+    "delete": "削除",
+    "deleteConfirm": "この投稿を削除しますか？",
+    "editSave": "投稿を更新しました",
+    "editCancel": "投稿の更新に失敗しました"
+  },
+  "board": {
+    "edit": "掲示板を編集",
+    "delete": "掲示板を削除",
+    "deleteConfirm": "この掲示板を削除しますか？",
+    "deleteWarning": "掲示板を削除すると元に戻せません。"
+  },
+  "thanks": {
+    "already": "Thanks",
+    "remove": "Thanksを取り消す"
   }
 }

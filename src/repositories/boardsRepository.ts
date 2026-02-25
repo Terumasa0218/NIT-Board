@@ -9,6 +9,7 @@ import {
   serverTimestamp,
   Timestamp,
   updateDoc,
+  deleteDoc,
   where,
   type DocumentData,
   type DocumentSnapshot,
@@ -231,6 +232,20 @@ export const createBoard = async (input: CreateBoardInput): Promise<Board> => {
   return toBoard(createdSnapshot)
 }
 
+
+export const updateBoard = async (boardId: string, input: { title: string; description?: string }): Promise<void> => {
+  const boardRef = doc(getBoardsCollection(), boardId)
+  await updateDoc(boardRef, {
+    title: input.title,
+    description: input.description ?? '',
+    updatedAt: serverTimestamp(),
+  })
+}
+
+export const deleteBoard = async (boardId: string): Promise<void> => {
+  const boardRef = doc(getBoardsCollection(), boardId)
+  await deleteDoc(boardRef)
+}
 export const setBestAnswer = async (boardId: string, postId: string | null): Promise<void> => {
   const boardRef = doc(getBoardsCollection(), boardId)
   await updateDoc(boardRef, {

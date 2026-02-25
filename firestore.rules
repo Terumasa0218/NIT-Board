@@ -63,8 +63,14 @@ service cloud.firestore {
     // Users collection (deployment verification comment)
     match /users/{userId} {
       allow read: if isSignedIn();
-      allow create: if isSignedIn() && request.auth.uid == userId;
-      allow update: if isOwner(userId) || isAdmin();
+      allow create: if isSignedIn() && request.auth.uid == userId
+        && request.auth.token.email.matches('.*@ict\\.nitech\\.ac\\.jp$');
+      allow update: if (isOwner(userId) || isAdmin())
+        && (isAdmin()
+          || (((!('followers' in request.resource.data) && !('followers' in resource.data))
+            || request.resource.data.followers == resource.data.followers)
+            && ((!('following' in request.resource.data) && !('following' in resource.data))
+            || request.resource.data.following == resource.data.following)));
       allow delete: if isAdmin();
     }
 

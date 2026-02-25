@@ -21,6 +21,7 @@ export default function ProfileSetupPage() {
   const [nickname, setNickname] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
+  const [subEmail, setSubEmail] = useState('')
   const { user, updateProfile, setupProfile } = useAuthStore()
   const navigate = useNavigate()
 
@@ -69,11 +70,11 @@ export default function ProfileSetupPage() {
       }
 
       if (!userDoc) {
-        await setupProfile(nickname.trim(), avatarUrl)
+        await setupProfile(nickname.trim(), avatarUrl, subEmail.trim() || undefined)
         await addPoints(user.id, 'profile_setup', 30, user.id)
         toast.success('プロフィールを作成しました')
       } else {
-        await updateProfile({ nickname: nickname.trim(), avatarUrl })
+        await updateProfile({ nickname: nickname.trim(), avatarUrl, subEmail: subEmail.trim() || undefined })
         toast.success('プロフィールを更新しました')
       }
 
@@ -151,6 +152,22 @@ export default function ProfileSetupPage() {
                 <span className="text-sm text-muted-foreground truncate">{avatarFile.name}</span>
               </div>
             )}
+          </div>
+
+
+          <div>
+            <label htmlFor="subEmail" className="block text-sm font-medium text-foreground mb-2">
+              通知用メールアドレス（任意）
+            </label>
+            <input
+              type="email"
+              id="subEmail"
+              value={subEmail}
+              onChange={(e) => setSubEmail(e.target.value)}
+              placeholder="Gmail / iCloud など"
+              className="input w-full"
+            />
+            <p className="text-xs text-muted-foreground mt-1">GmailやiCloudなど普段使いのメールを登録すると、次回からそのメールでもログインできます</p>
           </div>
 
           <button type="submit" disabled={isLoading || !nickname.trim()} className="btn btn-primary w-full">
