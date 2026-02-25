@@ -1,17 +1,9 @@
-import { useEffect } from 'react'
 import { Outlet } from 'react-router-dom'
-import { useAppStore } from '@/stores/appStore'
 import Sidebar from './Sidebar'
 import Header from './Header'
 import BuildInfo from './BuildInfo'
 
 export default function Layout() {
-  const { selectedUniversityId } = useAppStore()
-
-  useEffect(() => {
-    console.log('Current university:', selectedUniversityId)
-  }, [selectedUniversityId])
-
   return (
     <div className="flex min-h-screen bg-background pb-4 sm:pb-6">
       <Sidebar />

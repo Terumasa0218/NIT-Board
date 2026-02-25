@@ -34,7 +34,8 @@
     "badges": {
       "solved": "Solved",
       "unanswered": "Unanswered"
-    }
+    },
+    "createBoard": "Create Board"
   },
   "topic": {
     "filtered": "Topic: {{name}}"
@@ -88,7 +89,9 @@
       "verifying": "Verifying sign-in link...",
       "success": "Sign-in completed",
       "error": "Sign-in failed. Please login again"
-    }
+    },
+    "email": "Email",
+    "onlyNitechEmail": "Only Nagoya Institute of Technology email addresses (@ict.nitech.ac.jp) are allowed"
   },
   "images": {
     "dropzoneDescription": "Drop images here, or click to select",
@@ -103,7 +106,11 @@
   "common": {
     "edit": "Edit",
     "delete": "Delete",
-    "save": "Save"
+    "save": "Save",
+    "loading": "Loading...",
+    "events": "Events",
+    "messages": "Messages",
+    "settings": "Settings"
   },
   "circles": {
     "title": "Circles",
@@ -273,5 +280,8 @@
   "breadcrumb": {
     "home": "Home",
     "boards": "Boards"
+  },
+  "departments": {
+    "title": "Departments"
   }
 }

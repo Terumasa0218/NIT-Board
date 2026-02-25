@@ -145,7 +145,7 @@ export default function HomePage() {
           <Link to="/departments" className="rounded-md border border-border p-4 hover:bg-accent/30"><BookOpen className="h-4 w-4 mb-2" />{t('nav.boards')}</Link>
           <Link to="/circles" className="rounded-md border border-border p-4 hover:bg-accent/30"><Users className="h-4 w-4 mb-2" />{t('nav.circles')}</Link>
           <Link to="/search" className="rounded-md border border-border p-4 hover:bg-accent/30"><Search className="h-4 w-4 mb-2" />{t('search.title')}</Link>
-          <Link to="/boards" className="rounded-md border border-border p-4 hover:bg-accent/30"><MessageSquare className="h-4 w-4 mb-2" />Boards</Link>
+          <Link to="/boards" className="rounded-md border border-border p-4 hover:bg-accent/30"><MessageSquare className="h-4 w-4 mb-2" />{t('boards.title')}</Link>
         </div>
       </div>
 
