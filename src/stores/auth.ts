@@ -21,6 +21,7 @@ let initializationInProgress = false
 interface AuthStore extends AuthState {
   login: (email: string, password: string) => Promise<void>
   register: (email: string, password: string) => Promise<void>
+  enterGuestMode: () => void
   logout: () => Promise<void>
   sendVerificationEmail: () => Promise<void>
   sendPasswordReset: (email: string) => Promise<void>
@@ -137,6 +138,7 @@ export const useAuthStore = create<AuthStore>()(
     (set, get) => ({
       user: null,
       userProfile: null,
+      isGuest: false,
       loading: true,
 
       login: async (email: string, password: string) => {
@@ -153,7 +155,7 @@ export const useAuthStore = create<AuthStore>()(
           if (userDoc.suspendedUntil && userDoc.suspendedUntil > new Date()) {
             throw new Error('USER_SUSPENDED')
           }
-          set({ user: userDoc, userProfile: userDoc, loading: false })
+          set({ user: userDoc, userProfile: userDoc, isGuest: false, loading: false })
         } catch (error) {
           console.error('AuthStore: Login error:', error)
           set({ loading: false })
@@ -176,11 +178,15 @@ export const useAuthStore = create<AuthStore>()(
         }
       },
 
+      enterGuestMode: () => {
+        set({ user: null, userProfile: null, isGuest: true, loading: false })
+      },
+
       logout: async () => {
         set({ loading: true })
         try {
           await signOut(auth)
-          set({ user: null, userProfile: null, loading: false })
+          set({ user: null, userProfile: null, isGuest: false, loading: false })
         } catch (error) {
           set({ loading: false })
           throw error
@@ -207,7 +213,7 @@ export const useAuthStore = create<AuthStore>()(
 
         try {
           const userDoc = await createUserDocument(firebaseUser, nickname, avatarUrl)
-          set({ user: userDoc, userProfile: userDoc, loading: false })
+          set({ user: userDoc, userProfile: userDoc, isGuest: false, loading: false })
         } catch (error) {
           console.error('AuthStore: Profile setup failed:', error)
           throw error
@@ -273,25 +279,25 @@ export const useAuthStore = create<AuthStore>()(
 
         const handleUserState = async (firebaseUser: FirebaseUser | null) => {
           if (!firebaseUser) {
-            set({ user: null, userProfile: null, loading: false })
+            set((state) => ({ user: null, userProfile: null, isGuest: state.isGuest, loading: false }))
             return
           }
 
           if (!firebaseUser.emailVerified) {
-            set({ loading: false, user: null, userProfile: null })
+            set((state) => ({ loading: false, user: null, userProfile: null, isGuest: state.isGuest }))
             return
           }
 
           try {
             const userDoc = await ensureUserRecord(firebaseUser)
             if (userDoc && (!userDoc.suspendedUntil || userDoc.suspendedUntil <= new Date())) {
-              set({ user: userDoc, userProfile: userDoc, loading: false })
+              set({ user: userDoc, userProfile: userDoc, isGuest: false, loading: false })
             } else {
-              set({ user: null, userProfile: null, loading: false })
+              set((state) => ({ user: null, userProfile: null, isGuest: state.isGuest, loading: false }))
             }
           } catch (error) {
             console.error('AuthStore: Error fetching user document:', error)
-            set({ user: null, userProfile: null, loading: false })
+            set((state) => ({ user: null, userProfile: null, isGuest: state.isGuest, loading: false }))
           }
         }
 
@@ -315,7 +321,7 @@ export const useAuthStore = create<AuthStore>()(
         } catch (error) {
           clearTimeout(warnTimeout)
           console.error('AuthStore: Auth initialization failed:', error)
-          set({ user: null, userProfile: null, loading: false })
+          set((state) => ({ user: null, userProfile: null, isGuest: state.isGuest, loading: false }))
           initializationInProgress = false
           return () => {}
         }
@@ -324,6 +330,7 @@ export const useAuthStore = create<AuthStore>()(
     {
       name: 'nitech-board-auth',
       partialize: (state) => ({
+        isGuest: state.isGuest,
         user: state.user
           ? {
               id: state.user.id,

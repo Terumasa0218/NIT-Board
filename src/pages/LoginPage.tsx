@@ -11,7 +11,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
-  const { login } = useAuthStore()
+  const { login, enterGuestMode } = useAuthStore()
   const { t } = useI18n()
   const navigate = useNavigate()
   const location = useLocation()
@@ -20,6 +20,13 @@ export default function LoginPage() {
 
   const validateEmail = (email: string) => {
     return email.endsWith('@ict.nitech.ac.jp')
+  }
+
+
+  const handleGuestAccess = () => {
+    enterGuestMode()
+    toast.success(t('auth.guest.entered'))
+    navigate('/', { replace: true })
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -140,6 +147,13 @@ export default function LoginPage() {
           </form>
           
           <div className="card-footer flex flex-col gap-4">
+            <button
+              type="button"
+              onClick={handleGuestAccess}
+              className="btn btn-outline w-full"
+            >
+              {t('auth.guest.browseAsGuest')}
+            </button>
             <p className="text-center text-sm text-muted-foreground">
               {t('auth.dontHaveAccount')}{' '}
               <Link to="/register" className="text-primary hover:underline">

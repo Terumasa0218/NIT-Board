@@ -82,7 +82,7 @@ service cloud.firestore {
 
     // Boards collection
     match /boards/{boardId} {
-      allow read: if isSignedIn();
+      allow read: if true;
       allow create: if isSignedIn()
         && request.resource.data.createdBy == request.auth.uid
         && isValidBoardCreate(request.resource.data);
@@ -93,7 +93,7 @@ service cloud.firestore {
 
     // Posts collection
     match /posts/{postId} {
-      allow read: if isSignedIn();
+      allow read: if true;
       allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid;
       allow update, delete: if isOwner(resource.data.authorId) || isAdmin();
     }

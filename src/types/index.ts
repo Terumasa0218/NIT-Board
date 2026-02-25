@@ -176,6 +176,7 @@ export type Locale = 'ja' | 'en'
 export interface AuthState {
   user: User | null
   userProfile: User | null
+  isGuest: boolean
   loading: boolean
 }
 

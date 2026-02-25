@@ -1,46 +1,62 @@
 {
   "appTitle": "NITech Board",
-  "nav": { 
-    "home": "ホーム", 
-    "boards": "掲示板", 
-    "events": "イベント", 
-    "messages": "メッセージ" 
+  "nav": {
+    "home": "ホーム",
+    "boards": "掲示板",
+    "events": "イベント",
+    "messages": "メッセージ",
+    "profile": "プロフィール",
+    "settings": "設定"
   },
   "topics": "トピック",
-  "home": { 
-    "subtitle": "学内の知見共有プラットフォーム" 
+  "home": {
+    "subtitle": "学内の知見共有プラットフォーム"
   },
   "boards": {
     "title": "掲示板",
     "new": "新規作成",
     "searchPlaceholder": "掲示板を検索…",
     "noBoards": "まだ掲示板がありません",
-    "sort": { 
-      "latest": "最新", 
-      "popular": "人気", 
-      "unanswered": "未回答" 
+    "sort": {
+      "latest": "最新",
+      "popular": "人気",
+      "unanswered": "未回答"
     },
-    "badges": { 
-      "solved": "解決", 
-      "unanswered": "未回答" 
+    "badges": {
+      "solved": "解決",
+      "unanswered": "未回答"
     }
   },
-  "topic": { 
-    "filtered": "トピック: {{name}}" 
+  "topic": {
+    "filtered": "トピック: {{name}}"
   },
-  "form": { 
-    "title": "タイトル", 
-    "desc": "説明", 
-    "topic": "トピック", 
-    "create": "作成" 
+  "form": {
+    "title": "タイトル",
+    "desc": "説明",
+    "topic": "トピック",
+    "create": "作成"
   },
-  "empty": { 
-    "common": "まだ項目がありません", 
-    "posts": "まだ投稿がありません" 
+  "empty": {
+    "common": "まだ項目がありません",
+    "posts": "まだ投稿がありません"
   },
-  "follow": { 
-    "follow": "フォロー", 
-    "unfollow": "フォロー解除", 
-    "message": "メッセージ" 
+  "follow": {
+    "follow": "フォロー",
+    "unfollow": "フォロー解除",
+    "message": "メッセージ"
+  },
+  "guest": {
+    "bannerMessage": "ゲスト閲覧中です。ログインすると投稿やDMが利用できます。",
+    "sidebarRestricted": "DM・プロフィール機能はログイン後に利用できます。",
+    "boardLoginRequired": "投稿するにはログインしてください。"
+  },
+  "auth": {
+    "guest": {
+      "browseAsGuest": "ゲストとして閲覧する",
+      "entered": "ゲストモードで閲覧を開始しました"
+    },
+    "login": "ログイン",
+    "createAccount": "アカウント作成",
+    "logout": "ログアウト"
   }
 }
