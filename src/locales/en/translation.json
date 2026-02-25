@@ -72,7 +72,7 @@
     "createAccount": "Create account",
     "logout": "Log out",
     "sendLink": "Send sign-in link",
-    "checkEmail": "Check your email",
+    "checkEmail": "Please make sure your email address is correct",
     "magicLinkSent": "Please check your email and click the link",
     "magicLinkError": "Failed to send sign-in link",
     "subEmail": "Notification email (optional)",
@@ -88,10 +88,27 @@
     "callback": {
       "verifying": "Verifying sign-in link...",
       "success": "Sign-in completed",
-      "error": "Sign-in failed. Please login again"
+      "error": "Sign-in failed. Please login again",
+      "enterEmail": "Please enter your email address",
+      "enterEmailDescription": "We could not find your email on this device. Enter the email address used to request the sign-in link.",
+      "retrying": "Retrying sign-in..."
     },
     "email": "Email",
-    "onlyNitechEmail": "Only Nagoya Institute of Technology email addresses (@ict.nitech.ac.jp or @stn.nitech.ac.jp) are allowed"
+    "onlyNitechEmail": "Only Nagoya Institute of Technology email addresses (@ict.nitech.ac.jp or @stn.nitech.ac.jp) are allowed",
+    "linkSent": "Sign-in link sent",
+    "linkSentTo": "Sent a sign-in link to {{email}}",
+    "checkInbox": "Please check your inbox",
+    "resend": "Resend",
+    "resendIn": "You can resend in {{seconds}} seconds",
+    "resendCooldown": "You can resend once every 30 seconds",
+    "notReceived": "Didn't receive the email?",
+    "checkSpam": "Please check your spam folder",
+    "tryAnotherEmail": "Try another email address",
+    "errors": {
+      "invalidLink": "The link has expired. Please request a new sign-in link",
+      "expiredLink": "The link has expired",
+      "emailMismatch": "Please enter your email address"
+    }
   },
   "images": {
     "dropzoneDescription": "Drop images here, or click to select",
