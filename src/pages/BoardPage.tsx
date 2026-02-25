@@ -13,6 +13,9 @@ import { useI18n } from '@/utils/i18n'
 import ImageModal from '@/components/ImageModal'
 import { IMAGE_ACCEPT, uploadMultipleImages } from '@/utils/storage'
 import { addPoints } from '@/utils/points'
+import Breadcrumb from '@/components/Breadcrumb'
+import { DEPARTMENTS } from '@/constants/departments'
+import { createNotification } from '@/repositories/notificationsRepository'
 
 const MAX_POST_IMAGES = 4
 const MAX_BOARD_IMAGE_SIZE = 10 * 1024 * 1024
@@ -57,7 +60,7 @@ export default function BoardPage() {
   const { boardId } = useParams<{ boardId: string }>()
   const authUser = useAuthStore((state) => state.user)
   const isGuest = useAuthStore((state) => state.isGuest)
-  const { t } = useI18n()
+  const { t, currentLocale } = useI18n()
   const navigate = useNavigate()
   const authUserId = authUser?.id ?? null
 
@@ -267,6 +270,18 @@ export default function BoardPage() {
       const result = await toggleThanks(postId, authUserId!)
       if (result.thanked) {
         await addPoints(postAuthorId, 'thanks_received', 5, postId)
+        if (authUserId && postAuthorId !== authUserId) {
+          void createNotification({
+            userId: postAuthorId,
+            type: 'thanks_received',
+            refId: postId,
+            actorId: authUserId,
+            actorName: authUser?.nickname || 'Unknown User',
+            actorAvatarUrl: authUser?.avatarUrl,
+          }).catch((error) => {
+            console.error('Failed to create thanks notification', error)
+          })
+        }
       }
       setThankedPostIds((prev) => {
         const next = new Set(prev)
@@ -356,6 +371,18 @@ ${t('board.deleteConfirm')}`)) return
     try {
       await setBestAnswer(boardId, postId)
       await addPoints(postAuthorId, 'best_answer', 50, postId)
+      if (authUserId && postAuthorId !== authUserId) {
+        void createNotification({
+          userId: postAuthorId,
+          type: 'best_answer',
+          refId: postId,
+          actorId: authUserId,
+          actorName: authUser?.nickname || 'Unknown User',
+          actorAvatarUrl: authUser?.avatarUrl,
+        }).catch((error) => {
+          console.error('Failed to create best answer notification', error)
+        })
+      }
       setBoard((prev) => (prev ? { ...prev, bestAnswerPostId: postId } : prev))
       setPosts((prev) =>
         prev.map((post) => ({
@@ -434,6 +461,14 @@ ${t('board.deleteConfirm')}`)) return
     )
   }
 
+
+  const getDepartmentLabel = (departmentId?: string) => {
+    if (!departmentId) return ''
+    const department = DEPARTMENTS.find((item) => item.id === departmentId)
+    if (!department) return departmentId
+    return currentLocale === 'en' ? department.nameEn : department.nameJa
+  }
+
   const formatEventTime = (start?: Date, end?: Date) => {
     if (!start) return '日時未定'
     if (end) {
@@ -500,6 +535,14 @@ ${t('board.deleteConfirm')}`)) return
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
+      <Breadcrumb
+        items={[
+          { label: t('breadcrumb.home'), to: '/' },
+          ...(board.departmentId ? [{ label: getDepartmentLabel(board.departmentId), to: `/boards?dept=${board.departmentId}` }] : []),
+          ...(topic ? [{ label: currentLocale === 'en' ? topic.nameEn : topic.nameJa, to: `/boards?dept=${board.departmentId}&topic=${topic.id}` }] : []),
+          { label: board.title },
+        ]}
+      />
       <div className="bg-card text-card-foreground rounded-lg p-6 shadow-sm border border-border space-y-4">
         <div className="flex items-start justify-between">
           <div className="space-y-3">
@@ -542,7 +585,7 @@ ${t('board.deleteConfirm')}`)) return
           {posts.length === 0 ? (
             <div className="bg-muted/40 border border-border rounded-lg p-8 text-center text-muted-foreground">
               <MessageSquare className="h-10 w-10 mx-auto mb-3" />
-              まだ回答がありません。最初の回答を投稿しましょう。
+              {t('empty.posts')}<br />{t('empty.createFirst')}
             </div>
           ) : (
             posts.map((post) => (

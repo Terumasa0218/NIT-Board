@@ -5,6 +5,7 @@ import { useAppStore } from '@/stores/appStore'
 import { useAuthStore } from '@/stores/auth'
 import { getCircles } from '@/repositories/circlesRepository'
 import type { Circle, CircleCategory } from '@/types'
+import { Users } from 'lucide-react'
 
 const categoryOptions: Array<{ key: 'all' | CircleCategory; label: string }> = [
   { key: 'all', label: 'circles.categories.all' },
@@ -73,7 +74,12 @@ export default function CirclesPage() {
       {loading ? (
         <p className="text-muted-foreground">{t('circles.loading')}</p>
       ) : filtered.length === 0 ? (
-        <p className="text-muted-foreground">{t('circles.empty')}</p>
+        <div className="rounded-lg border border-border bg-card p-8 text-center">
+          <Users className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+          <p className="text-muted-foreground">{t('empty.circles')}</p>
+          <p className="text-sm text-muted-foreground mt-1">{t('empty.createFirst')}</p>
+          {user && !isGuest && <Link to="/circles/create" className="btn btn-primary btn-sm mt-4">{t('circles.create')}</Link>}
+        </div>
       ) : (
         <div className="grid md:grid-cols-2 gap-4">
           {filtered.map((circle) => (

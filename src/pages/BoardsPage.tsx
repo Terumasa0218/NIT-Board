@@ -11,6 +11,7 @@ import {
 } from '@/constants/departments'
 import { useAuthStore } from '@/stores/auth'
 import { DEFAULT_UNIVERSITY_ID } from '@/constants/university'
+import Breadcrumb from '@/components/Breadcrumb'
 import { normalizeYearParam } from '@/utils/boardsUrl'
 
 type SortType = 'latest' | 'popular' | 'unanswered' | 'postCount' | 'latestPost' | 'createdAt'
@@ -348,6 +349,16 @@ export default function BoardsPage() {
     <div className="max-w-4xl mx-auto p-6">
       {/* Header */}
       <div className="mb-6">
+      <div className="mb-4">
+        <Breadcrumb
+          items={[
+            { label: t('breadcrumb.home'), to: '/' },
+            ...(currentDepartment ? [{ label: getDepartmentLabel(currentDepartment.id), to: `/boards?dept=${currentDepartment.id}` }] : []),
+            ...(currentTopic ? [{ label: getTopicLabel(currentTopic.id) }] : []),
+          ]}
+        />
+      </div>
+
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-2xl font-bold text-foreground">
             {currentTopic
@@ -557,14 +568,15 @@ export default function BoardsPage() {
           </p>
         </div>
       ) : filteredBoards.length === 0 ? (
-        <div className="text-center py-12">
-          <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+        <div className="text-center py-12 space-y-3">
+          <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
           <h3 className="text-lg font-medium text-foreground mb-2">
-            {t('boards.noBoards')}
+            {t('empty.boards')}
           </h3>
           <p className="text-muted-foreground">
-            {currentTopic ? `${getTopicLabel(currentTopic.id)}の掲示板はまだありません` : '掲示板はまだありません'}
+            {t('empty.createFirst')}
           </p>
+          {!isGuest && userProfile && <Link to="/boards/create" className="btn btn-primary btn-sm">{t('boards.new')}</Link>}
         </div>
       ) : (
         <div className="space-y-4">

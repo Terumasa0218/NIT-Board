@@ -17,6 +17,8 @@ import {
   type QueryDocumentSnapshot,
 } from 'firebase/firestore'
 import { db } from '@/firebase'
+import { getUserById } from '@/repositories/usersRepository'
+import { createNotification } from '@/repositories/notificationsRepository'
 import type { Post } from '@/types'
 import { DEFAULT_UNIVERSITY_ID } from '@/constants/university'
 import { addPoints } from '@/utils/points'
@@ -24,6 +26,30 @@ import { addPoints } from '@/utils/points'
 const postsCollection = collection(db, 'posts')
 const boardsCollection = collection(db, 'boards')
 const likesCollection = collection(db, 'likes')
+
+
+const NOTIFY_FOLLOWER_LIMIT = 50
+
+const notifyFollowersForNewPost = async (postId: string, authorId: string, authorName?: string, authorAvatarUrl?: string) => {
+  const author = await getUserById(authorId)
+  if (!author) return
+
+  const followers = (author.followers ?? []).filter((id) => id && id !== authorId).slice(0, NOTIFY_FOLLOWER_LIMIT)
+  if (followers.length === 0) return
+
+  await Promise.all(
+    followers.map((followerId) =>
+      createNotification({
+        userId: followerId,
+        type: 'new_post_by_following',
+        refId: postId,
+        actorId: authorId,
+        actorName: authorName || author.nickname || 'Unknown User',
+        actorAvatarUrl: authorAvatarUrl || author.avatarUrl,
+      }),
+    ),
+  )
+}
 
 const toPost = (snapshot: QueryDocumentSnapshot<DocumentData> | DocumentSnapshot<DocumentData>): Post => {
   const data = snapshot.data()
@@ -101,6 +127,10 @@ export const createPost = async (input: {
   })
 
   await addPoints(input.authorId, 'post_created', 10, postRef.id)
+
+  void notifyFollowersForNewPost(postRef.id, input.authorId, input.authorName, input.authorAvatarUrl).catch((error) => {
+    console.error('Failed to create new post notifications', error)
+  })
 
   const createdSnapshot = await getDoc(postRef)
   return toPost(createdSnapshot)

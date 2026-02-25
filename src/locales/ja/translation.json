@@ -10,9 +10,16 @@
     "circles": "サークル",
     "ranking": "ランキング"
   },
-  "topics": "トピック",
+  "topics": {
+    "title": "トピック",
+    "completeness": "情報充実度",
+    "contributeMessage": "この分野の情報が不足しています。投稿して貢献しよう！"
+  },
   "home": {
-    "subtitle": "学内の知見共有プラットフォーム"
+    "subtitle": "学内の知見共有プラットフォーム",
+    "welcome": "おかえりなさい、{{name}}さん",
+    "recentActivity": "最近の活動",
+    "quickAccess": "クイックアクセス"
   },
   "boards": {
     "title": "掲示板",
@@ -40,7 +47,10 @@
   },
   "empty": {
     "common": "まだ項目がありません",
-    "posts": "まだ投稿がありません"
+    "posts": "まだ投稿がありません",
+    "boards": "この条件の掲示板はまだありません",
+    "circles": "サークルはまだありません",
+    "createFirst": "最初の投稿をしてみましょう！"
   },
   "follow": {
     "follow": "フォロー",
@@ -246,5 +256,22 @@
       }
     },
     "failed": "検索に失敗しました"
+  },
+  "notifications": {
+    "title": "通知",
+    "markAllRead": "全て既読にする",
+    "empty": "通知はまだありません",
+    "marked": "既読にしました",
+    "types": {
+      "thanks": "Thanksを受け取りました",
+      "bestAnswer": "ベストアンサーに選ばれました",
+      "newFollower": "新しいフォロワー",
+      "newPost": "フォロー中ユーザーの新規投稿",
+      "newMessage": "新しいメッセージ"
+    }
+  },
+  "breadcrumb": {
+    "home": "ホーム",
+    "boards": "掲示板"
   }
 }

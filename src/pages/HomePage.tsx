@@ -1,26 +1,27 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useI18n } from '@/utils/i18n'
-import { MessageSquare, Clock, Shield, Trophy } from 'lucide-react'
+import { CalendarDays, MessageSquare, Shield, Trophy, BookOpen, Search, Users } from 'lucide-react'
 import type { Board, User } from '@/types'
 import { ADMIN_PROFILE } from '@/constants/admin'
 import { useAuthStore } from '@/stores/auth'
 import { useAppStore } from '@/stores/appStore'
 import toast from 'react-hot-toast'
-import { getBoard, createBoard } from '@/repositories/boardsRepository'
+import { getBoard, createBoard, listBoards } from '@/repositories/boardsRepository'
 import { listTopUsersByPoints } from '@/repositories/usersRepository'
 
 const RECENT_KEY = 'recentBoardIds'
-const MAX_RECENT = 10
+const MAX_RECENT = 5
 
 export default function HomePage() {
-  const { t, formatRelativeTime } = useI18n()
+  const { t, formatRelativeTime, formatDate } = useI18n()
   const navigate = useNavigate()
   const { user, isGuest } = useAuthStore()
   const { selectedUniversityId } = useAppStore()
   const [recentBoards, setRecentBoards] = useState<Board[]>([])
   const [loading, setLoading] = useState(true)
   const [topUsers, setTopUsers] = useState<User[]>([])
+  const [recentActivity, setRecentActivity] = useState<Board[]>([])
 
   useEffect(() => {
     const loadRecentBoards = async () => {
@@ -34,19 +35,13 @@ export default function HomePage() {
 
       const limitedIds = ids.slice(0, MAX_RECENT)
       const boards = await Promise.all(limitedIds.map((id) => getBoard(id)))
-      const filtered = boards
-        .map((board, index) => ({ board, index }))
-        .filter((item) => item.board !== null)
-        .sort((a, b) => a.index - b.index)
-        .map((item) => item.board!) as Board[]
-
+      const filtered = boards.filter(Boolean) as Board[]
       setRecentBoards(filtered)
       setLoading(false)
     }
 
     loadRecentBoards()
   }, [])
-
 
   useEffect(() => {
     const loadTopUsers = async () => {
@@ -55,6 +50,18 @@ export default function HomePage() {
     }
     loadTopUsers()
   }, [])
+
+  useEffect(() => {
+    const loadRecentActivity = async () => {
+      try {
+        const boards = await listBoards({ universityId: selectedUniversityId, orderByField: 'createdAt', orderDirection: 'desc' })
+        setRecentActivity(boards.slice(0, 5))
+      } catch (error) {
+        console.error(error)
+      }
+    }
+    loadRecentActivity()
+  }, [selectedUniversityId])
 
   const handleAskAdmin = async () => {
     if (!user || isGuest) {
@@ -79,18 +86,16 @@ export default function HomePage() {
     }
   }
 
+  const todayLabel = useMemo(() => formatDate(new Date(), 'PPP'), [formatDate])
+
   return (
-    <div className="max-w-6xl mx-auto p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground mb-2">
-          {t('appTitle')}
-        </h1>
-        <p className="text-lg text-muted-foreground">
-          {t('home.subtitle')}
-        </p>
+    <div className="max-w-6xl mx-auto p-6 space-y-6">
+      <div className="rounded-lg border border-border bg-card p-5">
+        <h1 className="text-2xl font-bold text-foreground">{t('home.welcome', { name: user?.nickname || 'Guest' })}</h1>
+        <p className="text-sm text-muted-foreground mt-2 inline-flex items-center gap-2"><CalendarDays className="h-4 w-4" />{todayLabel}</p>
       </div>
 
-      <div className="mb-6 rounded-lg border border-border bg-card p-5">
+      <div className="rounded-lg border border-border bg-card p-5">
         <div className="flex items-start gap-3">
           <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center">
             {ADMIN_PROFILE.avatarUrl ? <img src={ADMIN_PROFILE.avatarUrl} alt={ADMIN_PROFILE.name} className="w-full h-full rounded-full object-cover" /> : <Shield className="h-6 w-6" />}
@@ -107,8 +112,19 @@ export default function HomePage() {
         </div>
       </div>
 
+      <div className="rounded-lg border border-border bg-card p-5">
+        <div className="flex items-center gap-2 mb-3"><MessageSquare className="h-5 w-5 text-primary" /><h2 className="text-lg font-semibold">{t('home.recentActivity')}</h2></div>
+        <div className="space-y-2">
+          {recentActivity.length === 0 ? <p className="text-muted-foreground">{t('empty.boards')}</p> : recentActivity.map((board) => (
+            <Link key={board.id} to={`/boards/${board.id}`} className="block rounded-md border border-border p-3 hover:bg-accent/30">
+              <p className="font-medium">{board.title}</p>
+              <p className="text-xs text-muted-foreground">{board.createdBy} · {formatRelativeTime(board.createdAt)}</p>
+            </Link>
+          ))}
+        </div>
+      </div>
 
-      <div className="mb-6 rounded-lg border border-border bg-card p-5">
+      <div className="rounded-lg border border-border bg-card p-5">
         <div className="flex items-center gap-2 mb-3">
           <Trophy className="h-5 w-5 text-amber-500" />
           <h2 className="text-lg font-semibold">{t('ranking.thisMonth')} TOP5</h2>
@@ -123,48 +139,21 @@ export default function HomePage() {
         </div>
       </div>
 
-      <div className="card">
-        <div className="card-header">
-          <div className="flex items-center gap-2">
-            <Clock className="h-5 w-5 text-primary" />
-            <h2 className="card-title">最近開いた掲示板</h2>
-          </div>
+      <div className="rounded-lg border border-border bg-card p-5">
+        <h2 className="text-lg font-semibold mb-3">{t('home.quickAccess')}</h2>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <Link to="/departments" className="rounded-md border border-border p-4 hover:bg-accent/30"><BookOpen className="h-4 w-4 mb-2" />{t('nav.boards')}</Link>
+          <Link to="/circles" className="rounded-md border border-border p-4 hover:bg-accent/30"><Users className="h-4 w-4 mb-2" />{t('nav.circles')}</Link>
+          <Link to="/search" className="rounded-md border border-border p-4 hover:bg-accent/30"><Search className="h-4 w-4 mb-2" />{t('search.title')}</Link>
+          <Link to="/boards" className="rounded-md border border-border p-4 hover:bg-accent/30"><MessageSquare className="h-4 w-4 mb-2" />Boards</Link>
         </div>
+      </div>
+
+      <div className="card">
+        <div className="card-header"><h2 className="card-title">最近開いた掲示板</h2></div>
         <div className="card-content">
-          {loading ? (
-            <p className="text-muted-foreground">読み込み中...</p>
-          ) : recentBoards.length === 0 ? (
-            <p className="text-muted-foreground">最近開いた掲示板はありません。</p>
-          ) : (
-            <div className="space-y-3">
-              {recentBoards.map((board) => (
-                <Link
-                  key={board.id}
-                  to={`/boards/${board.id}`}
-                  className="block p-3 rounded-lg hover:bg-accent transition-colors"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-medium text-foreground truncate">
-                        {board.title}
-                      </h3>
-                      <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
-                        <span className="bg-primary/10 text-primary px-2 py-1 rounded text-xs">
-                          {board.topicId}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <MessageSquare className="h-3 w-3" />
-                          {board.postCount}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="text-xs text-muted-foreground ml-2">
-                      {board.latestPostAt ? formatRelativeTime(board.latestPostAt) : formatRelativeTime(board.createdAt)}
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
+          {loading ? <p className="text-muted-foreground">読み込み中...</p> : recentBoards.length === 0 ? <p className="text-muted-foreground">最近開いた掲示板はありません。</p> : (
+            <div className="space-y-2">{recentBoards.map((board) => <Link key={board.id} to={`/boards/${board.id}`} className="block p-2 rounded hover:bg-accent">{board.title}</Link>)}</div>
           )}
         </div>
       </div>
